@@ -25,6 +25,10 @@ export default class extends Phaser.Scene {
       frameWidth: 100,
       frameHeight: 100,
     })
+    this.load.spritesheet('colors', 'assets/images/colors.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    })
 
     this.load.on('complete', () => {
       progress.destroy()
