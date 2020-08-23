@@ -49,10 +49,12 @@ export default class extends Phaser.Scene {
         const x = (i % BOARD_SIZE) * TILE_SIZE + 20
         const y = Math.floor(i / BOARD_SIZE) * TILE_SIZE + 500
         const type = Phaser.Math.RND.between(0, 2)
-        return this.add
+        const sprite = this.add
           .sprite(x, y, 'colors', n + type * BOARD_SIZE)
           .setScale(1.5)
           .setOrigin(0, 0)
+        sprite.index = i
+        return sprite
       })
       .filter((s) => !!s)
 
@@ -116,52 +118,58 @@ export default class extends Phaser.Scene {
       this.selectSprites()
     }
   }
+  newFish(sprite) {
+    const type = Phaser.Math.RND.between(0, 2)
+    sprite.setFrame(Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE)
+    let targetX = sprite.x
+    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
+    this.tweenFish(sprite, targetX)
+  }
+
+  tweenFish(sprite, targetX) {
+    if (!targetX) return
+
+    sprite.moving = true
+    this.tweens.add({
+      targets: [sprite],
+      x: targetX,
+      duration: 100,
+      onComplete: () => (sprite.moving = false),
+    })
+  }
+
+  swapFish(fishA, fishB) {
+    if (!fishA || !fishB) return
+
+    let frame = fishA.frame.name
+    fishA.setFrame(fishB.frame.name)
+    fishB.setFrame(frame)
+    let targetX = fishA.x
+    fishA.x = fishB.x
+    this.tweenFish(fishA, targetX)
+  }
 
   fillBoard() {
-    this.sprites.forEach((s, index) => {
-      s.index = index
-    })
     const leftSide = this.sprites.filter((s) => s.index % 8 < 4)
     const rightSide = this.sprites.filter((s) => s.index % 8 >= 4).reverse()
     const sides = [leftSide, rightSide]
-    // TODO: reduce duplication
+
     sides.forEach((side, sideIndex) => {
-      side.forEach((s) => {
-        const i = s.index
-        if (s.frame.name !== 1) return
-        // if left or right edge
-        if (i % BOARD_SIZE === 0 || i % BOARD_SIZE === BOARD_SIZE - 1) {
-          // create new fish and slide in
-          const type = Phaser.Math.RND.between(0, 2)
-          s.setFrame(Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE)
-          const targetX = s.x
-          const offset = i % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
-          s.x += offset
-          s.moving = true
-          this.tweens.add({
-            targets: [s],
-            x: targetX,
-            duration: 100,
-            onComplete: () => (s.moving = false),
-          })
+      side.forEach((sprite) => {
+        if (sprite.frame.name !== 1) return
+
+        const i = sprite.index
+        const rowIndex = i % BOARD_SIZE
+        const isEdge = rowIndex === 0 || rowIndex === BOARD_SIZE - 1
+        const neighbourIndex = sideIndex === 0 ? i - 1 : i + 1
+
+        if (isEdge) {
+          this.newFish(sprite)
         } else {
-          // check if left or right side and get cooresponding neighbour
-          const neighbour = side.find(
-            (sprite) => sprite.index === (sideIndex === 0 ? i - 1 : i + 1),
+          this.swapFish(
+            sprite,
+            side.find((s) => s.index === neighbourIndex && !s.moving),
           )
-          if (neighbour && !neighbour.moving) {
-            s.setFrame(neighbour.frame.name)
-            neighbour.setFrame(1)
-            const targetX = s.x
-            s.x = neighbour.x
-            s.moving = true
-            this.tweens.add({
-              targets: [s],
-              x: targetX,
-              duration: 100,
-              onComplete: () => (s.moving = false),
-            })
-          }
         }
       })
     })
