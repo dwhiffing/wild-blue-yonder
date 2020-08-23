@@ -5,7 +5,7 @@ const HOOKS = [
   [1, 0, 0, 1, 0, 0, 1, 0, 0], // COL
   [0, 0, 1, 0, 1, 0, 1, 0, 0], // CORNERS
   [1, 0, 0, 0, 1, 0, 0, 0, 1], // CORNERS
-  // [1, 1, 1, 0, 0, 0, 0, 0, 0], // ROW, TODO: doesn't fill properly
+  [1, 1, 1, 0, 0, 0, 0, 0, 0], // ROW
 ]
 
 const TILE_SIZE = 130
@@ -58,6 +58,7 @@ export default class extends Phaser.Scene {
 
     this.food = this.add.sprite(this.width / 2, 250, 'colors', 0).setScale(3)
     this.newHook()
+    this.canSubmit = true
   }
 
   newHook() {
@@ -95,8 +96,11 @@ export default class extends Phaser.Scene {
       this.hookCoord += BOARD_SIZE
       this.selectSprites()
     }
-    if (event.key === ' ') {
+    if (event.key === ' ' || event.key === '/') {
       this.submit()
+    }
+    if (event.key === 'n') {
+      this.fillBoard()
     }
   }
 
@@ -114,8 +118,16 @@ export default class extends Phaser.Scene {
   }
 
   fillBoard() {
-    while (this.sprites.filter((s) => s.frame.name === 1).length > 0) {
-      this.sprites.forEach((s, i, arr) => {
+    this.sprites.forEach((s, index) => {
+      s.index = index
+    })
+    const leftSide = this.sprites.filter((s) => s.index % 8 < 4)
+    const rightSide = this.sprites.filter((s) => s.index % 8 >= 4).reverse()
+    const sides = [leftSide, rightSide]
+    // TODO: reduce duplication
+    sides.forEach((side, sideIndex) => {
+      side.forEach((s) => {
+        const i = s.index
         if (s.frame.name !== 1) return
         // if left or right edge
         if (i % BOARD_SIZE === 0 || i % BOARD_SIZE === BOARD_SIZE - 1) {
@@ -123,24 +135,47 @@ export default class extends Phaser.Scene {
           const type = Phaser.Math.RND.between(0, 2)
           s.setFrame(Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE)
           const targetX = s.x
-          s.x += i % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
-          this.tweens.add({ targets: [s], x: targetX, duration: 100 })
+          const offset = i % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
+          s.x += offset
+          s.moving = true
+          this.tweens.add({
+            targets: [s],
+            x: targetX,
+            duration: 100,
+            onComplete: () => (s.moving = false),
+          })
         } else {
           // check if left or right side and get cooresponding neighbour
-          const neighbour = i % BOARD_SIZE < 4 ? arr[i - 1] : arr[i + 1]
-          s.setFrame(neighbour.frame.name)
-          neighbour.setFrame(1)
-
-          const targetX = s.x
-          s.x = neighbour.x
-          this.tweens.add({ targets: [s], x: targetX, duration: 100 })
+          const neighbour = side.find(
+            (sprite) => sprite.index === (sideIndex === 0 ? i - 1 : i + 1),
+          )
+          if (neighbour && !neighbour.moving) {
+            s.setFrame(neighbour.frame.name)
+            neighbour.setFrame(1)
+            const targetX = s.x
+            s.x = neighbour.x
+            s.moving = true
+            this.tweens.add({
+              targets: [s],
+              x: targetX,
+              duration: 100,
+              onComplete: () => (s.moving = false),
+            })
+          }
         }
       })
-    }
+    })
   }
 
   submit() {
+    if (!this.canSubmit) return
+    this.canSubmit = false
+    this.time.addEvent({
+      delay: 100,
+      callback: () => (this.canSubmit = true),
+    })
     const selected = this.sprites.filter((s) => s.alpha === 1)
+    if (!selected.every((s) => s.frame.name !== 1)) return
     const score = selected.reduce((sum, val) => {
       const shapeMatches =
         Math.floor(val.frame.name / BOARD_SIZE) ===
