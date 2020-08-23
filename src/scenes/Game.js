@@ -1,5 +1,6 @@
 const FISH_COLORS = [2, 5, 6]
-
+const TILE_SIZE = 130
+const BOARD_SIZE = 8
 const HOOKS = [
   //  [1, 1, 1, 1, 1, 1, 1, 1, 1], // BOX
   [1, 0, 0, 1, 0, 0, 1, 0, 0], // COL
@@ -7,9 +8,6 @@ const HOOKS = [
   [1, 0, 0, 0, 1, 0, 0, 0, 1], // CORNERS
   [1, 1, 1, 0, 0, 0, 0, 0, 0], // ROW
 ]
-
-const TILE_SIZE = 130
-const BOARD_SIZE = 8
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -32,14 +30,14 @@ export default class extends Phaser.Scene {
       })
       .setOrigin(0.5)
 
-    this.createBoard()
+    this.generateFish()
 
     this.input.keyboard.on('keydown', this.handleInput.bind(this))
   }
+
   update() {}
 
-  createBoard() {
-    // generate fish
+  generateFish() {
     this.data = new Array(BOARD_SIZE * BOARD_SIZE)
       .fill(1)
       .map((i) => (i > -1 ? Phaser.Math.RND.pick(FISH_COLORS) : -1))
@@ -175,16 +173,8 @@ export default class extends Phaser.Scene {
     })
   }
 
-  submit() {
-    if (!this.canSubmit) return
-    this.canSubmit = false
-    this.time.addEvent({
-      delay: 100,
-      callback: () => (this.canSubmit = true),
-    })
-    const selected = this.sprites.filter((s) => s.alpha === 1)
-    if (!selected.every((s) => s.frame.name !== 1)) return
-    const score = selected.reduce((sum, val) => {
+  getScore(selected) {
+    return selected.reduce((sum, val) => {
       const shapeMatches =
         Math.floor(val.frame.name / BOARD_SIZE) ===
         Math.floor(this.food.frame.name / BOARD_SIZE)
@@ -198,12 +188,21 @@ export default class extends Phaser.Scene {
           : -25
       return sum + score
     }, 0)
-    this.score += score
+  }
+
+  submit() {
+    if (!this.canSubmit) return
+    this.canSubmit = false
+    this.time.addEvent({ delay: 100, callback: () => (this.canSubmit = true) })
+
+    const selected = this.sprites.filter((s) => s.alpha === 1)
+    if (selected.some((s) => s.frame.name === 1)) return
+
+    this.score += this.getScore(selected)
     this.scoreText.setText(this.score)
+    selected.forEach((s) => s.setFrame(1))
+
     this.newHook()
-    selected.forEach((s) => {
-      s.setFrame(1)
-    })
     this.fillBoard()
   }
 
