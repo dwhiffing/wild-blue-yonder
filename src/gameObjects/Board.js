@@ -1,57 +1,25 @@
-import { HOOKS, BOARD_SIZE, TILE_SIZE, FISH_COLORS } from '../constants'
+import { BOARD_SIZE, TILE_SIZE, FISH_COLORS } from '../constants'
 
 export default class {
   constructor(scene) {
     this.scene = scene
-
-    this.data = new Array(BOARD_SIZE * BOARD_SIZE)
-      .fill(1)
-      .map((i) => (i > -1 ? Phaser.Math.RND.pick(FISH_COLORS) : -1))
-
-    this.sprites = this.data
-      .map((n, i) => {
-        const x = (i % BOARD_SIZE) * TILE_SIZE + 20
-        const y = Math.floor(i / BOARD_SIZE) * TILE_SIZE + 500
-        const type = Phaser.Math.RND.between(0, 2)
-        const sprite = this.scene.add
-          .sprite(x, y, 'colors', n + type * BOARD_SIZE)
-          .setScale(1.5)
-          .setOrigin(0, 0)
-        sprite.index = i
-        return sprite
-      })
-      .filter((s) => !!s)
-  }
-
-  newFish(sprite) {
-    const type = Phaser.Math.RND.between(0, 2)
-    sprite.setFrame(Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE)
-    let targetX = sprite.x
-    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
-    this.tweenFish(sprite, targetX)
-  }
-
-  tweenFish(sprite, targetX) {
-    if (!targetX) return
-
-    sprite.moving = true
-    this.scene.tweens.add({
-      targets: [sprite],
-      x: targetX,
-      duration: 100,
-      onComplete: () => (sprite.moving = false),
+    this.sprites = new Array(BOARD_SIZE * BOARD_SIZE).fill(1).map((n, i) => {
+      const x = (i % BOARD_SIZE) * TILE_SIZE + 20
+      const y = Math.floor(i / BOARD_SIZE) * TILE_SIZE + 500
+      const sprite = this.scene.add
+        .sprite(x, y, 'colors', this.getRandomType())
+        .setScale(1.5)
+        .setOrigin(0, 0)
+      sprite.index = i
+      return sprite
     })
   }
 
-  swapFish(fishA, fishB) {
-    if (!fishA || !fishB) return
-
-    let frame = fishA.frame.name
-    fishA.setFrame(fishB.frame.name)
-    fishB.setFrame(frame)
-    let targetX = fishA.x
-    fishA.x = fishB.x
-    this.tweenFish(fishA, targetX)
+  selectSprites() {
+    const selected = this.scene.hook.getSelectedIndexes()
+    this.sprites.forEach((sprite, spriteIndex) =>
+      sprite.setAlpha(selected.includes(spriteIndex) ? 1 : 0.5),
+    )
   }
 
   fillBoard() {
@@ -80,29 +48,38 @@ export default class {
     })
   }
 
-  selectSprites() {
-    this.sprites.forEach((sprite) => sprite.setAlpha(0.5))
-    // get the 9 tile box for hook starting from top left using hookCoord
-    // TODO: make this not hardcoded
-    const hookCoordIndexes = [
-      this.scene.hook.hookCoord,
-      this.scene.hook.hookCoord + 1,
-      this.scene.hook.hookCoord + 2,
-      this.scene.hook.hookCoord + 8,
-      this.scene.hook.hookCoord + 9,
-      this.scene.hook.hookCoord + 10,
-      this.scene.hook.hookCoord + 16,
-      this.scene.hook.hookCoord + 17,
-      this.scene.hook.hookCoord + 18,
-    ]
-    // get the active tiles within that box
-    const hook = this.scene.hook.getHook()
-    // highlight those tiles
-    const selected = this.sprites.filter((sprite, spriteIndex) =>
-      hookCoordIndexes
-        .filter((_, hookCoordIndex) => hook[hookCoordIndex] === 1)
-        .includes(spriteIndex),
-    )
-    selected.forEach((s) => s.setAlpha(1))
+  newFish(sprite) {
+    sprite.setFrame(this.getRandomType())
+    let targetX = sprite.x
+    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
+    this.tweenFish(sprite, targetX)
+  }
+
+  getRandomType() {
+    const type = Phaser.Math.RND.between(0, 2)
+    return Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE
+  }
+
+  swapFish(fishA, fishB) {
+    if (!fishA || !fishB) return
+
+    let frame = fishA.frame.name
+    fishA.setFrame(fishB.frame.name)
+    fishB.setFrame(frame)
+    let targetX = fishA.x
+    fishA.x = fishB.x
+    this.tweenFish(fishA, targetX)
+  }
+
+  tweenFish(sprite, targetX) {
+    if (!targetX) return
+
+    sprite.moving = true
+    this.scene.tweens.add({
+      targets: [sprite],
+      x: targetX,
+      duration: 100,
+      onComplete: () => (sprite.moving = false),
+    })
   }
 }

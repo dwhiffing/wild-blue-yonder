@@ -25,7 +25,7 @@ export default class extends Phaser.Scene {
       .setOrigin(0.5)
 
     this.food = this.add.sprite(this.width / 2, 250, 'colors', 0).setScale(3)
-    this.newHook()
+    this.newPattern()
 
     this.input.keyboard.on('keydown', this.handleInput.bind(this))
   }
@@ -40,12 +40,12 @@ export default class extends Phaser.Scene {
     if (event.key === 'n') this.board.fillBoard()
   }
 
-  newHook() {
+  newPattern() {
     const foodType = Phaser.Math.RND.between(0, 2)
     this.food.setFrame(
       Phaser.Math.RND.pick(FISH_COLORS) + foodType * BOARD_SIZE,
     )
-    this.hook.newHook()
+    this.hook.newPattern()
   }
 
   getScore(selected) {
@@ -78,7 +78,7 @@ export default class extends Phaser.Scene {
     this.scoreText.setText(this.score)
     selected.forEach((s) => s.setFrame(1))
 
-    this.newHook()
+    this.newPattern()
     this.board.fillBoard()
   }
 }

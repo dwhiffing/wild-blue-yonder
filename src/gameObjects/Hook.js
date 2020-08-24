@@ -3,62 +3,74 @@ import { HOOKS, BOARD_SIZE } from '../constants'
 export default class {
   constructor(scene) {
     this.scene = scene
-    this.hookCoord = 0
+    this.position = 0
     this.rotation = 0
   }
 
   move(direction) {
     const { width, height } = this.getHookDimensions()
-    if (direction === 'left' && this.hookCoord % BOARD_SIZE !== 0) {
-      this.hookCoord--
+    if (direction === 'left' && this.position % BOARD_SIZE !== 0) {
+      this.position--
     } else if (
       direction === 'right' &&
-      (this.hookCoord + width) % BOARD_SIZE !== 0
+      (this.position + width) % BOARD_SIZE !== 0
     ) {
-      this.hookCoord++
-    } else if (direction === 'up' && this.hookCoord >= BOARD_SIZE) {
-      this.hookCoord -= BOARD_SIZE
+      this.position++
+    } else if (direction === 'up' && this.position >= BOARD_SIZE) {
+      this.position -= BOARD_SIZE
     } else if (
       direction === 'down' &&
-      this.hookCoord <
+      this.position <
         BOARD_SIZE * BOARD_SIZE - BOARD_SIZE - (height - 1) * BOARD_SIZE
     ) {
-      this.hookCoord += BOARD_SIZE
+      this.position += BOARD_SIZE
     }
     this.scene.board.selectSprites()
   }
 
   rotate() {
     this.rotation = this.rotation + (1 % 4)
-    this.validateHookPosition()
+    this.enforceBounds()
     this.scene.board.selectSprites()
   }
 
-  newHook() {
+  newPattern() {
     this.hookIndex = Phaser.Math.RND.between(0, HOOKS.length - 1)
-    this.validateHookPosition()
+    this.enforceBounds()
     this.scene.board.selectSprites()
   }
 
-  validateHookPosition() {
-    const { width, height } = this.getHookDimensions()
-    const maxY = 56 - (height - 1) * BOARD_SIZE
-    while (this.hookCoord - 1 > maxY) {
-      this.hookCoord -= BOARD_SIZE
-    }
-    while ((this.hookCoord % BOARD_SIZE) + width > BOARD_SIZE) {
-      this.hookCoord--
-    }
+  getPattern() {
+    const patternSet = HOOKS[this.hookIndex]
+    return patternSet[this.rotation % patternSet.length]
   }
 
-  getHook() {
-    const hookSet = HOOKS[this.hookIndex]
-    return hookSet[this.rotation % hookSet.length]
+  getSelectedIndexes() {
+    const hook = this.scene.hook.getPattern()
+
+    return new Array(9)
+      .fill(1)
+      .map(
+        (_, index) =>
+          this.position + (index % 3) + BOARD_SIZE * Math.floor(index / 3),
+      )
+      .filter((_, index) => hook[index] === 1)
+  }
+
+  enforceBounds() {
+    const { width, height } = this.getHookDimensions()
+    const maxY =
+      BOARD_SIZE * BOARD_SIZE - BOARD_SIZE - (height - 1) * BOARD_SIZE
+    while (this.position - 1 > maxY) {
+      this.position -= BOARD_SIZE
+    }
+    while ((this.position % BOARD_SIZE) + width > BOARD_SIZE) {
+      this.position--
+    }
   }
 
   getHookDimensions() {
-    const hook = this.getHook()
-    // TODO: make this not hardcoded
+    const hook = this.getPattern()
 
     const cols = [
       [hook[2], hook[5], hook[8]],
