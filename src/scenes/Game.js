@@ -1,4 +1,6 @@
-import Board, { BOARD_SIZE, FISH_COLORS } from './Board'
+import Board from '../gameObjects/Board'
+import Hook from '../gameObjects/Hook'
+import { BOARD_SIZE, FISH_COLORS } from '../constants'
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -11,6 +13,7 @@ export default class extends Phaser.Scene {
     this.width = this.cameras.main.width
     this.height = this.cameras.main.height
     this.board = new Board(this)
+    this.hook = new Hook(this)
     this.score = 0
     this.canSubmit = true
 
@@ -28,11 +31,11 @@ export default class extends Phaser.Scene {
   }
 
   handleInput(event) {
-    if (event.key === 'ArrowLeft') this.board.move('left')
-    if (event.key === 'ArrowRight') this.board.move('right')
-    if (event.key === 'ArrowUp') this.board.move('up')
-    if (event.key === 'ArrowDown') this.board.move('down')
-    if (event.key === 'z') this.board.rotate()
+    if (event.key === 'ArrowLeft') this.hook.move('left')
+    if (event.key === 'ArrowRight') this.hook.move('right')
+    if (event.key === 'ArrowUp') this.hook.move('up')
+    if (event.key === 'ArrowDown') this.hook.move('down')
+    if (event.key === 'z') this.hook.rotate()
     if (event.key === ' ') this.submit()
     if (event.key === 'n') this.board.fillBoard()
   }
@@ -42,7 +45,7 @@ export default class extends Phaser.Scene {
     this.food.setFrame(
       Phaser.Math.RND.pick(FISH_COLORS) + foodType * BOARD_SIZE,
     )
-    this.board.newHook()
+    this.hook.newHook()
   }
 
   getScore(selected) {
