@@ -14,7 +14,22 @@ export default class {
       const x = (i % BOARD_SIZE) * TILE_SIZE + X_BUFFER + TILE_SIZE / 2
       const y =
         Math.floor(i / BOARD_SIZE) * TILE_SIZE + Y_BUFFER + TILE_SIZE / 2
-      const sprite = this.scene.add.sprite(x, y, 'colors', this.getRandomType())
+      const sprite = this.scene.add.sprite(
+        x + 2,
+        y + 5,
+        'colors',
+        this.getRandomType(),
+      )
+      sprite.bobTween = this.scene.tweens.add({
+        targets: sprite,
+        y: { from: y + 5, to: y - 5 },
+        x: { from: x + 2, to: x - 2 },
+        yoyo: true,
+        repeat: -1,
+        delay: i * 50,
+        ease: 'Quad.easeInOut',
+        duration: 2000,
+      })
       sprite.direction = i % 8 < 4 ? 1 : -1
       sprite.index = i
       return sprite
@@ -85,15 +100,18 @@ export default class {
 
   tweenFish(sprite, targetX) {
     if (!targetX) return
-
+    sprite.bobTween.pause()
     sprite.moving = true
-    this.scene.tweens.add({
+    sprite.moveTween = this.scene.tweens.add({
       targets: [sprite],
       x: targetX,
       duration: 800,
       delay: 5 * sprite.index,
       ease: 'Cubic.easeOut',
-      onComplete: () => (sprite.moving = false),
+      onComplete: () => {
+        sprite.bobTween.resume()
+        sprite.moving = false
+      },
     })
   }
 }
