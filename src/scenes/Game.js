@@ -38,7 +38,7 @@ export default class extends Phaser.Scene {
     if (selected.some((s) => s.frame.name === 1)) return
 
     this.canSubmit = false
-    this.time.addEvent({ delay: 100, callback: () => (this.canSubmit = true) })
+    this.time.addEvent({ delay: 300, callback: () => (this.canSubmit = true) })
 
     this.ui.setScore(this.getScore(selected))
     selected.forEach((s) => s.setFrame(1))

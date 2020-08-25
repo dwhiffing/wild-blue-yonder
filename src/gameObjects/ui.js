@@ -14,8 +14,8 @@ export default class {
       .setScale(3)
   }
   setScore(score) {
-    this.score += score
-    this.scoreText.setText(this.score)
+    this.scene.score += score
+    this.scoreText.setText(this.scene.score)
   }
   getFood() {
     return this.foodSprite.frame.name
