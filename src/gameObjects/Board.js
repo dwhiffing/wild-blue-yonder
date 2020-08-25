@@ -2,6 +2,7 @@ import {
   BOARD_SIZE,
   TILE_SIZE,
   FISH_COLORS,
+  SPRITE_SIZE,
   X_BUFFER,
   Y_BUFFER,
 } from '../constants'
@@ -40,7 +41,7 @@ export default class {
 
     sides.forEach((side, sideIndex) => {
       side.forEach((sprite) => {
-        if (sprite.frame.name !== 1) return
+        if (sprite.frame.name !== 0) return
 
         const i = sprite.index
         const rowIndex = i % BOARD_SIZE
@@ -62,13 +63,13 @@ export default class {
   newFish(sprite) {
     sprite.setFrame(this.getRandomType())
     let targetX = sprite.x
-    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE : TILE_SIZE
+    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE * 2 : TILE_SIZE * 2
     this.tweenFish(sprite, targetX)
   }
 
   getRandomType() {
     const type = Phaser.Math.RND.between(0, 2)
-    return Phaser.Math.RND.pick(FISH_COLORS) + type * BOARD_SIZE
+    return Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
   }
 
   swapFish(fishA, fishB) {

@@ -1,6 +1,7 @@
 export const X_BUFFER = 55
 export const Y_BUFFER = 500
-export const FISH_COLORS = [2, 5, 6]
+export const FISH_COLORS = [1, 2, 3]
+export const SPRITE_SIZE = 4
 export const TILE_SIZE = 120
 export const BOARD_SIZE = 8
 export const HOOKS = [

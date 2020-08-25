@@ -1,7 +1,7 @@
 import Board from '../gameObjects/Board'
 import Hook from '../gameObjects/Hook'
 import ui from '../gameObjects/ui'
-import { BOARD_SIZE, FISH_COLORS } from '../constants'
+import { SPRITE_SIZE, FISH_COLORS } from '../constants'
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -35,20 +35,20 @@ export default class extends Phaser.Scene {
     if (!this.canSubmit) return
 
     const selected = this.board.sprites.filter((s) => s.isSelected)
-    if (selected.some((s) => s.frame.name === 1)) return
+    if (selected.some((s) => s.frame.name === 0)) return
 
     this.canSubmit = false
     this.time.addEvent({ delay: 300, callback: () => (this.canSubmit = true) })
 
     this.ui.setScore(this.getScore(selected))
-    selected.forEach((s) => s.setFrame(1))
+    selected.forEach((s) => s.setFrame(0))
     this.newPattern()
     this.board.fillBoard()
   }
 
   newPattern() {
-    const foodType = Phaser.Math.RND.between(0, 2)
-    const newFrame = Phaser.Math.RND.pick(FISH_COLORS) + foodType * BOARD_SIZE
+    const type = Phaser.Math.RND.between(0, 2)
+    const newFrame = Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
     this.ui.foodSprite.setFrame(newFrame)
     this.hook.newPattern()
   }
@@ -56,10 +56,11 @@ export default class extends Phaser.Scene {
   getScore(selected) {
     return selected.reduce((sum, sprite) => {
       const shapeMatches =
-        Math.floor(sprite.frame.name / BOARD_SIZE) ===
-        Math.floor(this.ui.getFood() / BOARD_SIZE)
+        Math.floor(sprite.frame.name / SPRITE_SIZE) ===
+        Math.floor(this.ui.getFood() / SPRITE_SIZE)
       const colorMatches =
-        sprite.frame.name % BOARD_SIZE === this.ui.getFood() % BOARD_SIZE
+        (sprite.frame.name % FISH_COLORS.length) + 1 ===
+        (this.ui.getFood() % FISH_COLORS.length) + 1
       const isPerfect = colorMatches && shapeMatches
       const isPartial = colorMatches || shapeMatches
       const score = isPerfect ? 50 : isPartial ? 10 : -25
