@@ -1,11 +1,18 @@
-import { BOARD_SIZE, TILE_SIZE, FISH_COLORS } from '../constants'
+import {
+  BOARD_SIZE,
+  TILE_SIZE,
+  FISH_COLORS,
+  X_BUFFER,
+  Y_BUFFER,
+} from '../constants'
 
 export default class {
   constructor(scene) {
     this.scene = scene
     this.sprites = new Array(BOARD_SIZE * BOARD_SIZE).fill(1).map((n, i) => {
-      const x = (i % BOARD_SIZE) * TILE_SIZE + 20 + TILE_SIZE / 2
-      const y = Math.floor(i / BOARD_SIZE) * TILE_SIZE + 500 + TILE_SIZE / 2
+      const x = (i % BOARD_SIZE) * TILE_SIZE + X_BUFFER + TILE_SIZE / 2
+      const y =
+        Math.floor(i / BOARD_SIZE) * TILE_SIZE + Y_BUFFER + TILE_SIZE / 2
       const sprite = this.scene.add.sprite(x, y, 'colors', this.getRandomType())
       sprite.direction = i % 8 < 4 ? 1 : -1
       sprite.index = i
@@ -16,12 +23,12 @@ export default class {
   selectSprites() {
     const selected = this.scene.hook.getSelectedIndexes()
     this.sprites.forEach((sprite, spriteIndex) => {
-      sprite.setAlpha(selected.includes(spriteIndex) ? 1 : 0.55)
+      sprite.isSelected = selected.includes(spriteIndex)
       sprite.setScale(
         selected.includes(spriteIndex)
-          ? 1.75 * sprite.direction
-          : 1.5 * sprite.direction,
-        selected.includes(spriteIndex) ? 1.75 : 1.5,
+          ? 1 * sprite.direction
+          : 1 * sprite.direction,
+        selected.includes(spriteIndex) ? 1 : 1,
       )
     })
   }

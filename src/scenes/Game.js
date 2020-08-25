@@ -34,7 +34,7 @@ export default class extends Phaser.Scene {
   submit() {
     if (!this.canSubmit) return
 
-    const selected = this.board.sprites.filter((s) => s.alpha === 1)
+    const selected = this.board.sprites.filter((s) => s.isSelected)
     if (selected.some((s) => s.frame.name === 1)) return
 
     this.canSubmit = false

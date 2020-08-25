@@ -21,6 +21,7 @@ export default class extends Phaser.Scene {
     })
 
     this.load.image('playButton', 'assets/images/button.png')
+    this.load.image('bubble', 'assets/images/bubble2.png')
     this.load.spritesheet('icon', 'assets/images/icons.png', {
       frameWidth: 100,
       frameHeight: 100,
