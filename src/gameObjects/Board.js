@@ -40,12 +40,7 @@ export default class {
     const selected = this.scene.hook.getSelectedIndexes()
     this.sprites.forEach((sprite, spriteIndex) => {
       sprite.isSelected = selected.includes(spriteIndex)
-      sprite.setScale(
-        selected.includes(spriteIndex)
-          ? 1 * sprite.direction
-          : 1 * sprite.direction,
-        selected.includes(spriteIndex) ? 1 : 1,
-      )
+      sprite.setScale(1 * sprite.direction, 1)
     })
   }
 
