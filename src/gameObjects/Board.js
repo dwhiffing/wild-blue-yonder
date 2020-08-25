@@ -100,8 +100,8 @@ export default class {
     sprite.moveTween = this.scene.tweens.add({
       targets: [sprite],
       x: targetX,
-      duration: 800,
-      delay: 5 * sprite.index,
+      duration: 600,
+      delay: 20 * sprite.index,
       ease: 'Cubic.easeOut',
       onComplete: () => {
         sprite.bobTween.resume()

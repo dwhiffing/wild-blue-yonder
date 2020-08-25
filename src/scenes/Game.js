@@ -17,6 +17,19 @@ export default class extends Phaser.Scene {
     this.score = 0
     this.canSubmit = true
     this.input.keyboard.on('keydown', this.handleInput.bind(this))
+    this.particles = this.add.particles('bubble')
+    this.emitter = this.particles
+      .createEmitter({
+        x: 0,
+        y: 0,
+        speed: { min: -250, max: 0 },
+        quantity: 300,
+        gravityY: -150,
+        lifespan: { min: 500, max: 2000 },
+        scale: { start: 0.1, end: 0.5 },
+        alpha: { start: 1, end: 0 },
+      })
+      .stop()
 
     this.newPattern()
   }
@@ -38,12 +51,43 @@ export default class extends Phaser.Scene {
     if (selected.some((s) => s.frame.name === 0)) return
 
     this.canSubmit = false
-    this.time.addEvent({ delay: 300, callback: () => (this.canSubmit = true) })
 
     this.ui.setScore(this.getScore(selected))
-    selected.forEach((s) => s.setFrame(0))
-    this.newPattern()
-    this.board.fillBoard()
+    this.hook.clear()
+
+    selected.forEach((s, i) => {
+      s.bobTween.pause()
+      this.tweens.add({
+        targets: s,
+        scale: { from: 1 * s.direction, to: 0 },
+        angle: 180,
+        duration: 300,
+        ease: 'Quad.easeOut',
+        delay: 50 * i,
+        onComplete: () => {
+          s.setFrame(0)
+            .setAngle(0)
+            .setAlpha(1)
+            .setScale(1 * s.direction, 1)
+          this.emitter.setPosition(s.x, s.y)
+          this.emitter.explode(80)
+          s.bobTween.resume()
+        },
+      })
+    })
+    this.time.addEvent({
+      delay: 500,
+      callback: () => {
+        this.board.fillBoard()
+        this.time.addEvent({
+          delay: 300,
+          callback: () => {
+            this.newPattern()
+            this.canSubmit = true
+          },
+        })
+      },
+    })
   }
 
   newPattern() {

@@ -13,6 +13,7 @@ export default class {
   }
 
   move(direction) {
+    if (!this.canMove) return
     const { width, height } = this.getHookDimensions()
     if (direction === 'left' && this.position % BOARD_SIZE !== 0) {
       this.position--
@@ -36,6 +37,7 @@ export default class {
   }
 
   rotate() {
+    if (!this.canMove) return
     this.rotation = this.rotation + (1 % 4)
     this.enforceBounds()
     this.resetBubbles()
@@ -55,9 +57,9 @@ export default class {
           x: basePosition.x + (i % 3) * TILE_SIZE,
           y: basePosition.y + Math.floor(i / 3) * TILE_SIZE,
           scale: 1.5,
-          delay: i * 20,
+          delay: i * 15,
           ease: 'Back.easeOut',
-          duration: 200,
+          duration: 140,
         })
       }
     })
@@ -82,7 +84,20 @@ export default class {
     })
   }
 
+  clear() {
+    this.canMove = false
+    this.bubbles.forEach((b) => {
+      this.scene.tweens.add({
+        targets: b,
+        scale: 0,
+        alpha: 0,
+        duration: 200,
+      })
+    })
+  }
+
   newPattern() {
+    this.canMove = true
     this.hookIndex = Phaser.Math.RND.between(0, HOOKS.length - 1)
     this.enforceBounds()
     this.resetBubbles()
