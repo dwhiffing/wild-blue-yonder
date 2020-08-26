@@ -68,7 +68,7 @@ export default class extends Phaser.Scene {
           s.setFrame(0)
             .setAngle(0)
             .setAlpha(1)
-            .setScale(1 * s.direction, 1)
+            .setScale(1.5 * s.direction, 1.5)
           this.emitter.setPosition(s.x, s.y)
           this.emitter.explode(80)
           s.bobTween.resume()

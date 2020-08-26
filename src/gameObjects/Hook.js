@@ -7,7 +7,7 @@ export default class {
     this.rotation = 0
     this.bubbles = []
     Array.from({ length: 9 }).forEach((n, i) => {
-      const sprite = scene.add.sprite(0, 0, 'bubble').setScale(1.5).setAlpha(0)
+      const sprite = scene.add.sprite(0, 0, 'bubble').setScale(1.8).setAlpha(0)
       this.bubbles.push(sprite)
     })
   }
@@ -56,7 +56,7 @@ export default class {
           targets: bubble,
           x: basePosition.x + (i % 3) * TILE_SIZE,
           y: basePosition.y + Math.floor(i / 3) * TILE_SIZE,
-          scale: 1.5,
+          scale: 1.8,
           delay: i * 15,
           ease: 'Back.easeOut',
           duration: 140,
