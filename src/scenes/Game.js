@@ -48,19 +48,27 @@ export default class extends Phaser.Scene {
     if (!this.canSubmit) return
 
     const selected = this.board.sprites.filter((s) => s.isSelected)
-    if (selected.some((s) => s.frame.name === 0)) return
-
+    const frames = selected.map((s) => s.frame.name).filter((f) => f !== 0)
+    const colors = frames.map((f) => f % SPRITE_SIZE)
+    const types = frames.map((f) => Math.floor(f / SPRITE_SIZE))
+    const colorsMatch = colors.every((f) => colors[0] === f)
+    const shapesMatch = types.every((f) => types[0] === f)
+    if ((!colorsMatch && !shapesMatch) || frames.length === 0) return
+    const perfectMatch =
+      colorsMatch && shapesMatch && selected.length === frames.length
     this.canSubmit = false
 
-    this.ui.setScore(this.getScore(selected))
+    this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
     this.hook.clear()
 
     selected.forEach((s, i) => {
       s.bobTween.pause()
+      if (s.frame.name === 0) return
       this.tweens.add({
         targets: s,
-        scale: { from: 1 * s.direction, to: 0 },
-        angle: 180,
+        scale: { from: 1 * s.direction, to: 0.4 },
+        alpha: 0.2,
+        angle: 90,
         duration: 300,
         ease: 'Quad.easeOut',
         delay: 50 * i,
@@ -70,7 +78,13 @@ export default class extends Phaser.Scene {
             .setAlpha(1)
             .setScale(1.5 * s.direction, 1.5)
           this.emitter.setPosition(s.x, s.y)
-          this.emitter.explode(80)
+          this.emitter.setScale(
+            perfectMatch ? { start: 0.4, end: 0.8 } : { start: 0.1, end: 0.5 },
+          )
+          this.emitter.setLifespan(
+            perfectMatch ? { min: 750, max: 3000 } : { min: 500, max: 2000 },
+          )
+          this.emitter.explode(perfectMatch ? 150 : 80)
           s.bobTween.resume()
         },
       })
@@ -91,24 +105,9 @@ export default class extends Phaser.Scene {
   }
 
   newPattern() {
-    const type = Phaser.Math.RND.between(0, 2)
-    const newFrame = Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
-    this.ui.foodSprite.setFrame(newFrame)
+    // const type = Phaser.Math.RND.between(0, 2)
+    // const newFrame = Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
+    // this.ui.foodSprite.setFrame(newFrame)
     this.hook.newPattern()
-  }
-
-  getScore(selected) {
-    return selected.reduce((sum, sprite) => {
-      const shapeMatches =
-        Math.floor(sprite.frame.name / SPRITE_SIZE) ===
-        Math.floor(this.ui.getFood() / SPRITE_SIZE)
-      const colorMatches =
-        (sprite.frame.name % FISH_COLORS.length) + 1 ===
-        (this.ui.getFood() % FISH_COLORS.length) + 1
-      const isPerfect = colorMatches && shapeMatches
-      const isPartial = colorMatches || shapeMatches
-      const score = isPerfect ? 50 : isPartial ? 10 : -25
-      return sum + score
-    }, 0)
   }
 }
