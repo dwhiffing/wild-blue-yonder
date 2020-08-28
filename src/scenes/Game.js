@@ -1,7 +1,7 @@
 import Board from '../gameObjects/Board'
 import Hook from '../gameObjects/Hook'
 import ui from '../gameObjects/ui'
-import { SPRITE_SIZE, FISH_COLORS } from '../constants'
+import { SPRITE_SIZE, TILE_SIZE } from '../constants'
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -71,7 +71,7 @@ export default class extends Phaser.Scene {
         angle: 90,
         duration: 300,
         ease: 'Quad.easeOut',
-        delay: 50 * i,
+        delay: 30 * i,
         onComplete: () => {
           s.setFrame(0)
             .setAngle(0)
@@ -90,7 +90,7 @@ export default class extends Phaser.Scene {
       })
     })
     this.time.addEvent({
-      delay: 500,
+      delay: 1000,
       callback: () => {
         this.board.fillBoard()
         this.time.addEvent({
@@ -105,9 +105,6 @@ export default class extends Phaser.Scene {
   }
 
   newPattern() {
-    // const type = Phaser.Math.RND.between(0, 2)
-    // const newFrame = Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
-    // this.ui.foodSprite.setFrame(newFrame)
     this.hook.newPattern()
   }
 }

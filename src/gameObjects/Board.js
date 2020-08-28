@@ -30,7 +30,7 @@ export default class {
         ease: 'Quad.easeInOut',
         duration: 2000,
       })
-      sprite.direction = i % 8 < 4 ? 1 : -1
+      sprite.direction = 1
       sprite.index = i
       return sprite
     })
@@ -44,37 +44,48 @@ export default class {
     })
   }
 
-  fillBoard() {
-    const leftSide = this.sprites.filter((s) => s.index % 8 < 4)
-    const rightSide = this.sprites.filter((s) => s.index % 8 >= 4).reverse()
-    const sides = [leftSide, rightSide]
-
-    sides.forEach((side, sideIndex) => {
-      side.forEach((sprite) => {
-        if (sprite.frame.name !== 0) return
-
-        const i = sprite.index
-        const rowIndex = i % BOARD_SIZE
-        const isEdge = rowIndex === 0 || rowIndex === BOARD_SIZE - 1
-        const neighbourIndex = sideIndex === 0 ? i - 1 : i + 1
-
-        if (isEdge) {
-          this.newFish(sprite)
-        } else {
-          this.swapFish(
-            sprite,
-            side.find((s) => s.index === neighbourIndex && !s.moving),
-          )
-        }
-      })
-    })
+  getXY(sprite) {
+    return {
+      x: sprite.index % BOARD_SIZE,
+      y: Math.floor(sprite.index / BOARD_SIZE),
+      frame: sprite.frame.name,
+    }
   }
 
-  newFish(sprite) {
-    sprite.setFrame(this.getRandomType())
-    let targetX = sprite.x
-    sprite.x += sprite.index % BOARD_SIZE === 0 ? -TILE_SIZE * 2 : TILE_SIZE * 2
-    this.tweenFish(sprite, targetX)
+  fillBoard() {
+    const rows = this.chunk(this.sprites, BOARD_SIZE)
+    const movement = []
+    rows.forEach((row) => {
+      row
+        .sort((a, b) => b.x - a.x)
+        .forEach((sprite, index, row) => {
+          const emptySpaces = row.reduce(
+            (sum, { index, frame }) =>
+              index > sprite.index && frame.name === 0 ? sum + 1 : sum,
+            0,
+          )
+          let neighbour = row[index - emptySpaces]
+          this.swapFish(sprite, neighbour)
+          movement.push({ sprite, targetX: neighbour.x })
+
+          // this is an even because it needs to wait for callstack to clear
+          let targetX = neighbour.x
+          this.scene.time.addEvent({
+            delay: 0,
+            callback: () => {
+              if (sprite.frame.name === 0) {
+                sprite.x = -100 - emptySpaces * TILE_SIZE
+                sprite.setFrame(this.getRandomType())
+                this.tweenFish(sprite, targetX)
+              }
+            },
+          })
+        })
+    })
+
+    movement.forEach(({ sprite, targetX }, i) => {
+      this.tweenFish(sprite, targetX)
+    })
   }
 
   getRandomType() {
@@ -90,23 +101,26 @@ export default class {
     fishB.setFrame(frame)
     let targetX = fishA.x
     fishA.x = fishB.x
-    this.tweenFish(fishA, targetX)
+    fishB.x = targetX
   }
 
   tweenFish(sprite, targetX) {
-    if (!targetX) return
     sprite.bobTween.pause()
-    sprite.moving = true
     sprite.moveTween = this.scene.tweens.add({
-      targets: [sprite],
+      targets: sprite,
       x: targetX,
-      duration: 600,
-      delay: 20 * sprite.index,
-      ease: 'Cubic.easeOut',
+      duration: 1000,
+      ease: 'Quad.easeInOut',
       onComplete: () => {
         sprite.bobTween.resume()
-        sprite.moving = false
       },
     })
+  }
+
+  chunk(array, size) {
+    var result = []
+    for (var i = 0; i < array.length; i += size)
+      result.push(array.slice(i, i + size))
+    return result
   }
 }
