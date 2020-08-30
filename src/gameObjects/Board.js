@@ -55,7 +55,8 @@ export default class {
       .filter(
         (s) =>
           // (s.direction === 1 && s.index % 8 === 7) ||
-          s.direction === -1 && s.index % 8 === 0,
+          // s.direction === -1 && s.index % 8 === 0,
+          false,
       )
       .forEach((sprite) => {
         const toX =
@@ -119,6 +120,13 @@ export default class {
     movement.forEach(({ sprite, targetX }, i) => {
       this.tweenFish(sprite, targetX)
     })
+
+    this.scene.time.addEvent({
+      delay: 850,
+      callback: () => {
+        this.scene.submit()
+      },
+    })
   }
 
   getRandomType() {
@@ -157,7 +165,7 @@ export default class {
       targets: sprite,
       x: targetX,
       ...props,
-      duration: 1200,
+      duration: 850,
       ease: 'Quad.easeInOut',
       onComplete: () => {
         sprite.bobTween && sprite.bobTween.resume()
@@ -174,5 +182,41 @@ export default class {
     for (var i = 0; i < array.length; i += size)
       result.push(array.slice(i, i + size))
     return result
+  }
+
+  valueAt(index) {
+    return this.sprites[index] ? this.sprites[index].frame.name : null
+  }
+
+  isPartOfMatch(index) {
+    return (
+      this.isPartOfHorizontalMatch(index) || this.isPartOfVerticalMatch(index)
+    )
+  }
+
+  isPartOfVerticalMatch(index) {
+    return (
+      (this.valueAt(index) === this.valueAt(index - BOARD_SIZE) &&
+        this.valueAt(index) === this.valueAt(index - BOARD_SIZE * 2)) ||
+      (this.valueAt(index) === this.valueAt(index + BOARD_SIZE) &&
+        this.valueAt(index) === this.valueAt(index + BOARD_SIZE * 2)) ||
+      (this.valueAt(index) === this.valueAt(index - BOARD_SIZE) &&
+        this.valueAt(index) === this.valueAt(index + BOARD_SIZE))
+    )
+  }
+
+  isPartOfHorizontalMatch(index) {
+    return (
+      (index % BOARD_SIZE >= 2 &&
+        this.valueAt(index) === this.valueAt(index - 1) &&
+        this.valueAt(index) === this.valueAt(index - 2)) ||
+      (index % BOARD_SIZE <= BOARD_SIZE - 2 &&
+        this.valueAt(index) === this.valueAt(index + 1) &&
+        this.valueAt(index) === this.valueAt(index + 2)) ||
+      (index % BOARD_SIZE >= 1 &&
+        index % BOARD_SIZE <= BOARD_SIZE - 1 &&
+        this.valueAt(index) === this.valueAt(index - 1) &&
+        this.valueAt(index) === this.valueAt(index + 1))
+    )
   }
 }

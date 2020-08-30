@@ -69,6 +69,10 @@ export default class extends Phaser.Scene {
     )
     this.selectedColumn = false
     this.board.sprites.forEach((s) => s.bobTween.resume())
+    this.time.addEvent({
+      delay: 300,
+      callback: () => this.submit(),
+    })
   }
 
   handleInput(event) {
@@ -78,18 +82,22 @@ export default class extends Phaser.Scene {
   submit() {
     if (!this.canSubmit) return
 
-    const selected = this.board.sprites.filter((s) => s.isSelected)
-    const frames = selected.map((s) => s.frame.name).filter((f) => f !== 0)
-    const colors = frames.map((f) => f % SPRITE_SIZE)
-    const types = frames.map((f) => Math.floor(f / SPRITE_SIZE))
-    const colorsMatch = colors.every((f) => colors[0] === f)
-    const shapesMatch = types.every((f) => types[0] === f)
-    if ((!colorsMatch && !shapesMatch) || frames.length === 0) return
-    const perfectMatch =
-      colorsMatch && shapesMatch && selected.length === frames.length
-    this.canSubmit = false
+    // const selected = this.board.sprites.filter((s) => s.isSelected)
+    // const frames = selected.map((s) => s.frame.name).filter((f) => f !== 0)
+    // const colors = frames.map((f) => f % SPRITE_SIZE)
+    // const types = frames.map((f) => Math.floor(f / SPRITE_SIZE))
+    // const colorsMatch = colors.every((f) => colors[0] === f)
+    // const shapesMatch = types.every((f) => types[0] === f)
+    // if ((!colorsMatch && !shapesMatch) || frames.length === 0) return
+    // const perfectMatch =
+    //   colorsMatch && shapesMatch && selected.length === frames.length
+    // this.canSubmit = false
 
-    this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
+    // this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
+
+    const selected = this.board.sprites.filter((s) =>
+      this.board.isPartOfMatch(s.index),
+    )
 
     // pop matches
     selected.forEach((s, i) => {
@@ -102,30 +110,28 @@ export default class extends Phaser.Scene {
         angle: 90,
         duration: 300,
         ease: 'Quad.easeOut',
-        delay: 30 * i,
+        // delay: 30 * i,
         onComplete: () => {
           s.setFrame(0)
             .setAngle(0)
             .setAlpha(1)
             .setScale(1.5 * s.direction, 1.5)
           this.emitter.setPosition(s.x, s.y)
-          this.emitter.setScale(
-            perfectMatch ? { start: 0.4, end: 0.8 } : { start: 0.1, end: 0.5 },
-          )
-          this.emitter.setLifespan(
-            perfectMatch ? { min: 750, max: 3000 } : { min: 500, max: 2000 },
-          )
-          this.emitter.explode(perfectMatch ? 150 : 80)
+          this.emitter.setScale({ start: 0.1, end: 0.5 })
+          this.emitter.setLifespan({ min: 500, max: 2000 })
+          this.emitter.explode(80)
           s.bobTween.resume()
         },
       })
     })
 
-    // fill board
-    this.time.addEvent({
-      delay: 500,
-      callback: () => this.board.fillBoard(),
-    })
+    if (selected.length > 0) {
+      // fill board
+      this.time.addEvent({
+        delay: 400,
+        callback: () => this.board.fillBoard(),
+      })
+    }
   }
 
   newPattern() {
