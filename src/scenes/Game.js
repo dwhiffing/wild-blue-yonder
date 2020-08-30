@@ -1,7 +1,12 @@
 import Board from '../gameObjects/Board'
-import Hook from '../gameObjects/Hook'
 import ui from '../gameObjects/ui'
-import { SPRITE_SIZE, TILE_SIZE } from '../constants'
+import {
+  SPRITE_SIZE,
+  TILE_SIZE,
+  BOARD_SIZE,
+  Y_BUFFER,
+  X_BUFFER,
+} from '../constants'
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -12,7 +17,6 @@ export default class extends Phaser.Scene {
     this.width = this.cameras.main.width
     this.height = this.cameras.main.height
     this.board = new Board(this)
-    this.hook = new Hook(this)
     this.ui = new ui(this)
     this.score = 0
     this.canSubmit = true
@@ -31,16 +35,43 @@ export default class extends Phaser.Scene {
       })
       .stop()
 
-    this.newPattern()
+    this.input.on('pointerdown', this.pointerDown, this)
+    this.input.on('pointermove', this.pointerMove, this)
+    this.input.on('pointerup', this.pointerUp, this)
+  }
+
+  pointerDown(pointer) {
+    this.startY = pointer.y
+    this.selectedColumn = Math.floor((pointer.x - X_BUFFER) / TILE_SIZE)
+    this.board.sprites.forEach((s) => s.bobTween.pause())
+  }
+
+  pointerMove(pointer) {
+    if (typeof this.selectedColumn === 'number') {
+      const diffY = pointer.y - this.startY
+      this.board.sprites
+        .filter((s) => s.index % BOARD_SIZE === this.selectedColumn)
+        .forEach((s) => {
+          let newY =
+            diffY + Math.floor(s.index / BOARD_SIZE) * TILE_SIZE + TILE_SIZE / 2
+          if (newY < 0) newY += BOARD_SIZE * TILE_SIZE
+
+          s.y = Y_BUFFER + (newY % (BOARD_SIZE * TILE_SIZE))
+        })
+    }
+  }
+
+  pointerUp(pointer) {
+    const diffY = pointer.y - this.startY + TILE_SIZE / 2
+    this.board.columnMove(
+      this.selectedColumn,
+      Math.floor(diffY / TILE_SIZE) % BOARD_SIZE,
+    )
+    this.selectedColumn = false
+    this.board.sprites.forEach((s) => s.bobTween.resume())
   }
 
   handleInput(event) {
-    if (event.key === 'ArrowLeft') this.hook.move('left')
-    if (event.key === 'ArrowRight') this.hook.move('right')
-    if (event.key === 'ArrowUp') this.hook.move('up')
-    if (event.key === 'ArrowDown') this.hook.move('down')
-    if (event.key === 'z') this.hook.rotate()
-    if (event.key === ' ') this.submit()
     if (event.key === 'n') this.board.fillBoard()
   }
 
@@ -59,9 +90,8 @@ export default class extends Phaser.Scene {
     this.canSubmit = false
 
     this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
-    this.hook.clear()
 
-    // pop selected
+    // pop matches
     selected.forEach((s, i) => {
       s.bobTween.pause()
       if (s.frame.name === 0) return
@@ -94,16 +124,7 @@ export default class extends Phaser.Scene {
     // fill board
     this.time.addEvent({
       delay: 500,
-      callback: () => {
-        this.board.fillBoard()
-        this.time.addEvent({
-          delay: 300,
-          callback: () => {
-            this.newPattern()
-            this.canSubmit = true
-          },
-        })
-      },
+      callback: () => this.board.fillBoard(),
     })
   }
 

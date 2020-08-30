@@ -23,6 +23,8 @@ export default class {
         'colors',
         this.getRandomType(),
       )
+      sprite.direction = Math.floor(i / BOARD_SIZE) % 2 === 0 ? 1 : -1
+      sprite.setScale(1.5 * sprite.direction, 1.5)
       sprite.bobTween = this.scene.tweens.add({
         targets: sprite,
         y: { from: y + 5, to: y - 5 },
@@ -33,17 +35,9 @@ export default class {
         ease: 'Quad.easeInOut',
         duration: 2000,
       })
-      sprite.direction = Math.floor(i / BOARD_SIZE) % 2 === 0 ? 1 : -1
+
       sprite.index = i
       return sprite
-    })
-  }
-
-  selectSprites() {
-    const selected = this.scene.hook.getSelectedIndexes()
-    this.sprites.forEach((sprite, spriteIndex) => {
-      sprite.isSelected = selected.includes(spriteIndex)
-      sprite.setScale(1.5 * sprite.direction, 1.5)
     })
   }
 
@@ -60,8 +54,8 @@ export default class {
     this.sprites
       .filter(
         (s) =>
-          (s.direction === 1 && s.index % 8 === 7) ||
-          (s.direction === -1 && s.index % 8 === 0),
+          // (s.direction === 1 && s.index % 8 === 7) ||
+          s.direction === -1 && s.index % 8 === 0,
       )
       .forEach((sprite) => {
         const toX =
@@ -132,6 +126,20 @@ export default class {
     return Phaser.Math.RND.pick(FISH_COLORS) + type * SPRITE_SIZE
   }
 
+  columnMove(columnIndex, numMove) {
+    const column = this.chunk(this.sprites, BOARD_SIZE).map(
+      (r) => r[columnIndex],
+    )
+    const move = this.wrap(numMove, BOARD_SIZE)
+    let end = column.slice(BOARD_SIZE - move)
+    let start = column.slice(0, BOARD_SIZE - move)
+    const newArr = [...end, ...start].map((f) => f.frame.name)
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      const fishA = column[i]
+      fishA.setFrame(newArr[i])
+    }
+  }
+
   swapFish(fishA, fishB) {
     if (!fishA || !fishB) return
 
@@ -155,6 +163,10 @@ export default class {
         sprite.bobTween && sprite.bobTween.resume()
       },
     })
+  }
+
+  wrap(n, m) {
+    return n >= 0 ? n % m : ((n % m) + m) % m
   }
 
   chunk(array, size) {
