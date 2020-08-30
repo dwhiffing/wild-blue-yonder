@@ -10,6 +10,9 @@ import {
 export default class {
   constructor(scene) {
     this.scene = scene
+    this.tempSprites = new Array(BOARD_SIZE)
+      .fill(1)
+      .map((n, i) => this.scene.add.sprite(0, 0, 'colors', 0).setAlpha(0))
     this.sprites = new Array(BOARD_SIZE * BOARD_SIZE).fill(1).map((n, i) => {
       const x = (i % BOARD_SIZE) * TILE_SIZE + X_BUFFER + TILE_SIZE / 2
       const y =
@@ -30,7 +33,7 @@ export default class {
         ease: 'Quad.easeInOut',
         duration: 2000,
       })
-      sprite.direction = 1
+      sprite.direction = Math.floor(i / BOARD_SIZE) % 2 === 0 ? 1 : -1
       sprite.index = i
       return sprite
     })
@@ -53,30 +56,66 @@ export default class {
   }
 
   fillBoard() {
+    // swim fish off screen
+    this.sprites
+      .filter(
+        (s) =>
+          (s.direction === 1 && s.index % 8 === 7) ||
+          (s.direction === -1 && s.index % 8 === 0),
+      )
+      .forEach((sprite) => {
+        const toX =
+          sprite.direction === 1 ? sprite.x + TILE_SIZE : sprite.x - TILE_SIZE
+        const tempSprite = this.tempSprites.find((s) => s.alpha === 0)
+        tempSprite
+          .setAlpha(1)
+          .setFrame(sprite.frame.name)
+          .setScale(1.5 * sprite.direction, 1.5)
+          .setPosition(sprite.x, sprite.y)
+        sprite.setFrame(0)
+        this.tweenFish(tempSprite, toX, { alpha: 0 })
+      })
+
+    // swim inner fish
     const rows = this.chunk(this.sprites, BOARD_SIZE)
     const movement = []
     rows.forEach((row) => {
       row
-        .sort((a, b) => b.x - a.x)
+        .sort((a, b) => (a.direction === 1 ? b.x - a.x : a.x - b.x))
         .forEach((sprite, index, row) => {
           const emptySpaces = row.reduce(
             (sum, { index, frame }) =>
-              index > sprite.index && frame.name === 0 ? sum + 1 : sum,
+              (sprite.direction === 1
+                ? index > sprite.index
+                : index < sprite.index) && frame.name === 0
+                ? sum + 1
+                : sum,
             0,
           )
-          let neighbour = row[index - emptySpaces]
-          this.swapFish(sprite, neighbour)
-          movement.push({ sprite, targetX: neighbour.x })
+          let neighbour =
+            row[
+              sprite.direction === 1 ? index - emptySpaces : index - emptySpaces
+            ]
 
-          // this is an even because it needs to wait for callstack to clear
+          if (neighbour) {
+            this.swapFish(sprite, neighbour)
+            movement.push({ sprite, targetX: neighbour.x })
+          }
+
+          // add new fish
+          // this is an event because it needs to wait for callstack to clear
           let targetX = neighbour.x
           this.scene.time.addEvent({
             delay: 0,
             callback: () => {
               if (sprite.frame.name === 0) {
-                sprite.x = -100 - emptySpaces * TILE_SIZE
+                sprite.setAlpha(0)
+                sprite.x =
+                  sprite.direction === 1
+                    ? 220 - (emptySpaces + 1) * TILE_SIZE
+                    : this.scene.width - 100 + emptySpaces * TILE_SIZE
                 sprite.setFrame(this.getRandomType())
-                this.tweenFish(sprite, targetX)
+                this.tweenFish(sprite, targetX, { alpha: 1 })
               }
             },
           })
@@ -104,15 +143,16 @@ export default class {
     fishB.x = targetX
   }
 
-  tweenFish(sprite, targetX) {
-    sprite.bobTween.pause()
+  tweenFish(sprite, targetX, props = {}) {
+    sprite.bobTween && sprite.bobTween.pause()
     sprite.moveTween = this.scene.tweens.add({
       targets: sprite,
       x: targetX,
-      duration: 1000,
+      ...props,
+      duration: 1200,
       ease: 'Quad.easeInOut',
       onComplete: () => {
-        sprite.bobTween.resume()
+        sprite.bobTween && sprite.bobTween.resume()
       },
     })
   }

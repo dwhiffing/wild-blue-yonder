@@ -61,6 +61,7 @@ export default class extends Phaser.Scene {
     this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
     this.hook.clear()
 
+    // pop selected
     selected.forEach((s, i) => {
       s.bobTween.pause()
       if (s.frame.name === 0) return
@@ -89,8 +90,10 @@ export default class extends Phaser.Scene {
         },
       })
     })
+
+    // fill board
     this.time.addEvent({
-      delay: 1000,
+      delay: 500,
       callback: () => {
         this.board.fillBoard()
         this.time.addEvent({
