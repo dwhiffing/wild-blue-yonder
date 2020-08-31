@@ -33,12 +33,31 @@ export default class extends Phaser.Scene {
       yoyo: true,
     })
     this.add
-      .image(this.width / 2, this.height / 1.25, 'playButton')
+      .image(this.width / 2, this.height / 1.55, 'playButton')
       .setScale(1.3)
       .setInteractive()
       .on('pointerdown', () => {
-        this.musicObject.destroy()
-        this.scene.start('Game')
+        if (this.started) return
+        this.sound.play('match1Sound')
+        this.tweens.add({
+          targets: this.musicObject,
+          duration: 1900,
+          volume: 0,
+        })
+        this.started = true
+        this.cameras.main.fade(2000, 20, 57, 162, true, (c, p) => {
+          if (p === 1) {
+            this.musicObject.destroy()
+            this.scene.start('Game')
+          }
+        })
+      })
+    this.add
+      .image(this.width / 2, this.height / 1.25, 'aboutButton')
+      .setScale(1.3)
+      .setInteractive()
+      .on('pointerdown', () => {
+        logo.setAlpha(logo.alpha ? 0 : 1)
       })
   }
 }

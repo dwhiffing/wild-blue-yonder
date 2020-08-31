@@ -15,8 +15,14 @@ export default class extends Phaser.Scene {
   }
 
   create() {
+    this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
     this.musicObject = this.sound.add('game1Music')
-    this.musicObject.play({ volume: 0.5, loop: true })
+    this.musicObject.play({ volume: 0, loop: true })
+    this.tweens.add({
+      targets: this.musicObject,
+      duration: 1900,
+      volume: { from: 0, to: 0.4 },
+    })
     this.width = this.cameras.main.width
     this.height = this.cameras.main.height
     this.board = new Board(this)
@@ -54,20 +60,17 @@ export default class extends Phaser.Scene {
   pointerMove(pointer) {
     if (typeof this.selectedColumn === 'number') {
       const diffY = pointer.y - this.startY
-      // let position = Math.floor(diffY / TILE_SIZE)
-      // if (this.lastPosition !== position) {
-      //   console.log(position, this.lastPosition)
-      // }
-      // this.lastPosition = position
-      this.board.sprites
-        .filter((s) => s.index % BOARD_SIZE === this.selectedColumn)
-        .forEach((s) => {
-          let newY =
-            diffY + Math.floor(s.index / BOARD_SIZE) * TILE_SIZE + TILE_SIZE / 2
-          if (newY < 0) newY += BOARD_SIZE * TILE_SIZE
+      this.selectedSprites = this.board.sprites.filter(
+        (s) => s.index % BOARD_SIZE === this.selectedColumn,
+      )
 
-          s.y = Y_BUFFER + (newY % (BOARD_SIZE * TILE_SIZE))
-        })
+      this.selectedSprites.forEach((s) => {
+        let newY =
+          diffY + Math.floor(s.index / BOARD_SIZE) * TILE_SIZE + TILE_SIZE / 2
+        if (newY < 0) newY += BOARD_SIZE * TILE_SIZE
+
+        s.y = Y_BUFFER + (newY % (BOARD_SIZE * TILE_SIZE))
+      })
     }
   }
 
@@ -75,7 +78,8 @@ export default class extends Phaser.Scene {
     if (
       !this.canMove ||
       typeof this.selectedColumn !== 'number' ||
-      this.selectedColumn < 0
+      this.selectedColumn < 0 ||
+      this.selectedSprites.filter((s) => s.frame.name !== 0).length === 0
     )
       return
 
@@ -86,6 +90,7 @@ export default class extends Phaser.Scene {
     this.board.columnMove(this.selectedColumn, moveAmount)
     this.selectedColumn = false
     this.board.sprites.forEach((s) => s.bobTween && s.bobTween.resume())
+    moveAmount !== 0 && this.sound.play('moveSound')
     this.time.addEvent({
       delay: 50,
       callback: () => this.submit(moveAmount !== 0),

@@ -56,6 +56,7 @@ export default class {
   fillBoard() {
     this.moveDirection = this.moveDirection === 0 ? 1 : 0
     this.scene.canFill = false
+    this.scene.sound.play('swimSound', { volume: 0.3, rate: 1.4 })
     // swim inner fish
     const rows = this.chunk(this.sprites, BOARD_SIZE)
     const movement = []
