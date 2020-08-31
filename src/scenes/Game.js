@@ -23,11 +23,13 @@ export default class extends Phaser.Scene {
       duration: 1900,
       volume: { from: 0, to: 0.4 },
     })
+    this.score = 0
+    this.level = 1
+    this.moves = 10
     this.width = this.cameras.main.width
     this.height = this.cameras.main.height
     this.board = new Board(this)
     this.ui = new ui(this)
-    this.score = 0
     this.canFill = true
     this.particles = this.add.particles('bubble')
     this.emitter = this.particles
@@ -74,6 +76,17 @@ export default class extends Phaser.Scene {
     }
   }
 
+  newLevel() {
+    this.cameras.main.fade(1000, 20, 57, 162, true, (c, p) => {
+      if (p === 1) {
+        this.moves = 10
+        this.ui.setMoves(this.moves)
+        this.board.generateBoard()
+        this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
+      }
+    })
+  }
+
   pointerUp(pointer) {
     if (
       !this.canMove ||
@@ -83,14 +96,23 @@ export default class extends Phaser.Scene {
     )
       return
 
-    // this.sound.play('moveSound')
+    if (this.moves <= 0) {
+      this.sound.play('loseSound')
+
+      this.newLevel()
+      return
+    }
 
     const diffY = pointer.y - this.startY + TILE_SIZE / 2
     const moveAmount = Math.floor(diffY / TILE_SIZE) % BOARD_SIZE
     this.board.columnMove(this.selectedColumn, moveAmount)
     this.selectedColumn = false
     this.board.sprites.forEach((s) => s.bobTween && s.bobTween.resume())
-    moveAmount !== 0 && this.sound.play('moveSound')
+    if (moveAmount !== 0) {
+      this.moves -= 1
+      this.ui.setMoves(this.moves)
+      this.sound.play('moveSound')
+    }
     this.time.addEvent({
       delay: 50,
       callback: () => this.submit(moveAmount !== 0),
@@ -107,7 +129,8 @@ export default class extends Phaser.Scene {
 
     // pop matches
     if (selected.length > 0) {
-      this.ui.setScore(100 * selected.length)
+      this.score += 100 * selected.length
+      this.ui.setScore(this.score)
       this.sound.play('match1Sound')
     }
     selected.forEach((s, i) => {
@@ -148,7 +171,10 @@ export default class extends Phaser.Scene {
           (i) => types.filter((t) => t === i).length < 3,
         )
       ) {
-        this.board.generateBoard()
+        this.sound.play('winSound')
+        this.level++
+        this.ui.setLevel(this.level)
+        this.newLevel()
       }
     }
   }
