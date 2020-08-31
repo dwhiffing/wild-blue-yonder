@@ -20,6 +20,11 @@ export default class extends Phaser.Scene {
       )
     })
 
+    this.load.script(
+      'webfont',
+      'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js',
+    )
+
     this.load.image('playButton', 'assets/images/button.png')
     this.load.image('aboutButton', 'assets/images/about.png')
     this.load.audio('menuMusic', 'assets/menu.mp3')
@@ -39,8 +44,15 @@ export default class extends Phaser.Scene {
     })
 
     this.load.on('complete', () => {
-      progress.destroy()
-      this.scene.start('Menu')
+      WebFont.load({
+        custom: {
+          families: ['RockSalt'],
+        },
+        active: () => {
+          progress.destroy()
+          this.scene.start('Menu')
+        },
+      })
     })
   }
 }
