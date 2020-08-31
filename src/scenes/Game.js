@@ -131,9 +131,7 @@ export default class extends Phaser.Scene {
           (i) => types.filter((t) => t === i).length < 3,
         )
       ) {
-        this.board.sprites
-          .filter((s) => s.frame.name > 0)
-          .forEach((s) => s.setFrame(0))
+        this.board.generateBoard()
       }
     }
   }

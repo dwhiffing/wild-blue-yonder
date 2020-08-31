@@ -11,7 +11,6 @@ import {
 export default class {
   constructor(scene) {
     this.scene = scene
-    let types = this.getRandomType()
     this.tempSprites = new Array(50)
       .fill(1)
       .map((n, i) => this.scene.add.sprite(0, 0, 'colors', 0).setAlpha(0))
@@ -19,7 +18,7 @@ export default class {
       const x = (i % BOARD_SIZE) * TILE_SIZE + X_BUFFER + TILE_SIZE / 2
       const y =
         Math.floor(i / BOARD_SIZE) * TILE_SIZE + Y_BUFFER + TILE_SIZE / 2
-      const sprite = this.scene.add.sprite(x + 2, y + 5, 'colors', types[i])
+      const sprite = this.scene.add.sprite(x + 2, y + 5, 'colors')
       sprite.direction = Math.floor(i / BOARD_SIZE) % 2 === 0 ? 1 : -1
       sprite.setScale(TILE_SCALE * sprite.direction, TILE_SCALE)
       sprite.bobTween = this.scene.tweens.add({
@@ -36,11 +35,14 @@ export default class {
       sprite.index = i
       return sprite
     })
-    while (this.sprites.some((s) => this.isPartOfMatch(s.index))) {
-      types = this.getRandomType()
+    this.generateBoard()
+  }
 
-      this.sprites.forEach((s) => s.setFrame(types[s.index]))
-    }
+  generateBoard() {
+    do {
+      let types = this.getRandomType()
+      this.sprites.forEach((s, i) => s.setFrame(types[i]))
+    } while (this.sprites.some((s) => this.isPartOfMatch(s.index)))
   }
 
   getXY(sprite) {
@@ -87,7 +89,16 @@ export default class {
             0,
           )
           const moveAmount = emptySpaces > 0 ? 1 : 0
-          const neighbour = row[index - moveAmount]
+          const nextFish = row[index - (emptySpaces + 1)]
+          const neighbour =
+            row[
+              index -
+                (nextFish &&
+                nextFish.frame.name === sprite.frame.name &&
+                sprite.frame.name > 0
+                  ? emptySpaces
+                  : moveAmount)
+            ]
           if (neighbour) {
             this.swapFish(sprite, neighbour)
             movement.push({ sprite, targetX: neighbour.x })
