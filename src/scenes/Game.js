@@ -6,6 +6,7 @@ import {
   Y_BUFFER,
   X_BUFFER,
   TILE_SCALE,
+  EXPLOSION_DURATION,
 } from '../constants'
 
 export default class extends Phaser.Scene {
@@ -19,9 +20,7 @@ export default class extends Phaser.Scene {
     this.board = new Board(this)
     this.ui = new ui(this)
     this.score = 0
-    this.canSubmit = true
     this.canFill = true
-    this.input.keyboard.on('keydown', this.handleInput.bind(this))
     this.particles = this.add.particles('bubble')
     this.emitter = this.particles
       .createEmitter({
@@ -78,32 +77,16 @@ export default class extends Phaser.Scene {
     this.selectedColumn = false
     this.board.sprites.forEach((s) => s.bobTween && s.bobTween.resume())
     this.time.addEvent({
-      delay: 300,
+      delay: 50,
       callback: () => this.submit(moveAmount !== 0),
     })
   }
 
-  handleInput(event) {
-    if (event.key === 'n') this.canFill && this.board.fillBoard()
-  }
-
   submit(forceFill = false) {
-    if (!this.canSubmit) return
     this.canMove = false
     this.canFill = false
 
-    // const selected = this.board.sprites.filter((s) => s.isSelected)
-    // const frames = selected.map((s) => s.frame.name).filter((f) => f !== 0)
-    // const colors = frames.map((f) => f % SPRITE_SIZE)
-    // const types = frames.map((f) => Math.floor(f / SPRITE_SIZE))
-    // const colorsMatch = colors.every((f) => colors[0] === f)
-    // const shapesMatch = types.every((f) => types[0] === f)
-    // if ((!colorsMatch && !shapesMatch) || frames.length === 0) return
-    // const perfectMatch =
-    //   colorsMatch && shapesMatch && selected.length === frames.length
-    // this.canSubmit = false
-
-    // this.ui.setScore(20 * frames.length * (perfectMatch ? 5 : 1))
+    // this.ui.setScore()
 
     const selected = this.board.sprites.filter((s) =>
       this.board.isPartOfMatch(s.index),
@@ -118,9 +101,8 @@ export default class extends Phaser.Scene {
         scale: { from: TILE_SCALE * s.direction, to: TILE_SCALE * 0.5 },
         alpha: 0,
         angle: 90,
-        duration: 600,
-        // ease: 'Quad.easeOut',
-        // delay: 30 * i,
+        duration: EXPLOSION_DURATION,
+        ease: 'Quad.easeOut',
         onComplete: () => {
           s.setFrame(0)
             .setAngle(0)
@@ -136,10 +118,9 @@ export default class extends Phaser.Scene {
     })
 
     if (selected.length > 0 || forceFill) {
-      // fill board
       this.time.addEvent({
-        delay: 660,
-        callback: () => this.board.fillBoard(),
+        delay: selected.length > 0 ? EXPLOSION_DURATION + 100 : 0,
+        callback: this.board.fillBoard.bind(this.board),
       })
     } else {
       this.canFill = true

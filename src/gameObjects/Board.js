@@ -5,6 +5,7 @@ import {
   Y_BUFFER,
   FISH_COLORS,
   TILE_SCALE,
+  MOVE_DURATION,
 } from '../constants'
 
 export default class {
@@ -27,7 +28,7 @@ export default class {
         x: { from: x + 2, to: x - 2 },
         yoyo: true,
         repeat: -1,
-        delay: i * 20,
+        delay: i * 50,
         ease: 'Quad.easeInOut',
         duration: 2000,
       })
@@ -122,7 +123,7 @@ export default class {
     })
 
     this.scene.time.addEvent({
-      delay: 900,
+      delay: MOVE_DURATION,
       callback: () => {
         this.scene.canFill = true
         this.scene.submit()
@@ -169,7 +170,7 @@ export default class {
       targets: sprite,
       x: targetX,
       ...props,
-      duration: 850,
+      duration: MOVE_DURATION,
       ease: 'Quad.easeInOut',
       onComplete: () => {
         sprite.bobTween && sprite.bobTween.resume()
