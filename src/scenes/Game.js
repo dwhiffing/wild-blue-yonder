@@ -1,11 +1,11 @@
 import Board from '../gameObjects/Board'
 import ui from '../gameObjects/ui'
 import {
-  SPRITE_SIZE,
   TILE_SIZE,
   BOARD_SIZE,
   Y_BUFFER,
   X_BUFFER,
+  TILE_SCALE,
 } from '../constants'
 
 export default class extends Phaser.Scene {
@@ -20,6 +20,7 @@ export default class extends Phaser.Scene {
     this.ui = new ui(this)
     this.score = 0
     this.canSubmit = true
+    this.canFill = true
     this.input.keyboard.on('keydown', this.handleInput.bind(this))
     this.particles = this.add.particles('bubble')
     this.emitter = this.particles
@@ -38,12 +39,15 @@ export default class extends Phaser.Scene {
     this.input.on('pointerdown', this.pointerDown, this)
     this.input.on('pointermove', this.pointerMove, this)
     this.input.on('pointerup', this.pointerUp, this)
+    this.canMove = true
+    this.submit()
   }
 
   pointerDown(pointer) {
+    if (!this.canMove) return
     this.startY = pointer.y
     this.selectedColumn = Math.floor((pointer.x - X_BUFFER) / TILE_SIZE)
-    this.board.sprites.forEach((s) => s.bobTween.pause())
+    this.board.sprites.forEach((s) => s.bobTween && s.bobTween.pause())
   }
 
   pointerMove(pointer) {
@@ -62,25 +66,31 @@ export default class extends Phaser.Scene {
   }
 
   pointerUp(pointer) {
-    const diffY = pointer.y - this.startY + TILE_SIZE / 2
-    this.board.columnMove(
-      this.selectedColumn,
-      Math.floor(diffY / TILE_SIZE) % BOARD_SIZE,
+    if (
+      !this.canMove ||
+      typeof this.selectedColumn !== 'number' ||
+      this.selectedColumn < 0
     )
+      return
+    const diffY = pointer.y - this.startY + TILE_SIZE / 2
+    const moveAmount = Math.floor(diffY / TILE_SIZE) % BOARD_SIZE
+    this.board.columnMove(this.selectedColumn, moveAmount)
     this.selectedColumn = false
-    this.board.sprites.forEach((s) => s.bobTween.resume())
+    this.board.sprites.forEach((s) => s.bobTween && s.bobTween.resume())
     this.time.addEvent({
       delay: 300,
-      callback: () => this.submit(),
+      callback: () => this.submit(moveAmount !== 0),
     })
   }
 
   handleInput(event) {
-    if (event.key === 'n') this.board.fillBoard()
+    if (event.key === 'n') this.canFill && this.board.fillBoard()
   }
 
-  submit() {
+  submit(forceFill = false) {
     if (!this.canSubmit) return
+    this.canMove = false
+    this.canFill = false
 
     // const selected = this.board.sprites.filter((s) => s.isSelected)
     // const frames = selected.map((s) => s.frame.name).filter((f) => f !== 0)
@@ -101,36 +111,49 @@ export default class extends Phaser.Scene {
 
     // pop matches
     selected.forEach((s, i) => {
-      s.bobTween.pause()
+      s.bobTween && s.bobTween.pause()
       if (s.frame.name === 0) return
       this.tweens.add({
         targets: s,
-        scale: { from: 1 * s.direction, to: 0.4 },
-        alpha: 0.2,
+        scale: { from: TILE_SCALE * s.direction, to: TILE_SCALE * 0.5 },
+        alpha: 0,
         angle: 90,
-        duration: 300,
-        ease: 'Quad.easeOut',
+        duration: 600,
+        // ease: 'Quad.easeOut',
         // delay: 30 * i,
         onComplete: () => {
           s.setFrame(0)
             .setAngle(0)
             .setAlpha(1)
-            .setScale(1.5 * s.direction, 1.5)
+            .setScale(TILE_SCALE * s.direction, TILE_SCALE)
           this.emitter.setPosition(s.x, s.y)
           this.emitter.setScale({ start: 0.1, end: 0.5 })
           this.emitter.setLifespan({ min: 500, max: 2000 })
           this.emitter.explode(80)
-          s.bobTween.resume()
+          s.bobTween && s.bobTween.resume()
         },
       })
     })
 
-    if (selected.length > 0) {
+    if (selected.length > 0 || forceFill) {
       // fill board
       this.time.addEvent({
-        delay: 400,
+        delay: 660,
         callback: () => this.board.fillBoard(),
       })
+    } else {
+      this.canFill = true
+      this.canMove = true
+      const types = this.board.sprites.map((s) => s.frame.name)
+      if (
+        [1, 2, 3, 5, 6, 7, 9, 10, 11].every(
+          (i) => types.filter((t) => t === i).length < 3,
+        )
+      ) {
+        this.board.sprites
+          .filter((s) => s.frame.name > 0)
+          .forEach((s) => s.setFrame(0))
+      }
     }
   }
 

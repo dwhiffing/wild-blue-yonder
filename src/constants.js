@@ -1,58 +1,11 @@
-export const X_BUFFER = 55
+export const X_BUFFER = 0
 export const Y_BUFFER = 500
-export const FISH_COLORS = [1, 2]
+const COLORS = [0, 1]
+const BIG = COLORS.map((n) => n + 1)
+const SMALL = COLORS.map((n) => n + 5)
+const MEDIUM = COLORS.map((n) => n + 9)
+export const FISH_COLORS = [...BIG, ...SMALL]
 export const SPRITE_SIZE = 4
-export const TILE_SIZE = 120
-export const BOARD_SIZE = 8
-export const HOOKS = [
-  // [[1, 1, 1, 0, 1, 0, 0, 1, 0]], // T
-  // [[1, 1, 1, 1, 1, 1, 1, 1, 1]], // BOX
-  // [[1, 0, 1, 0, 1, 0, 1, 0, 1]], // CORNERS
-  // [[0, 0, 0, 0, 1, 0, 0, 0, 0]], // DOT
-  [
-    // LINE
-    [1, 0, 0, 1, 0, 0, 1, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0],
-  ],
-  // [
-  //   // SMALL BOX
-  //   [1, 1, 0, 1, 1, 0, 0, 0, 0],
-  // ],
-  // [
-  //   // SMALL CORNER
-  //   [1, 1, 0, 1, 0, 0, 0, 0, 0],
-  //   [1, 1, 0, 0, 1, 0, 0, 0, 0],
-  //   [1, 0, 0, 1, 1, 0, 0, 0, 0],
-  //   [0, 1, 0, 1, 1, 0, 0, 0, 0],
-  // ],
-  // [
-  //   // SNAKE S
-  //   [0, 1, 1, 1, 1, 0, 0, 0, 0],
-  //   [1, 0, 0, 1, 1, 0, 0, 1, 0],
-  // ],
-  // [
-  //   // SNAKE Z
-  //   [1, 1, 0, 0, 1, 1, 0, 0, 0],
-  //   [0, 1, 0, 1, 1, 0, 1, 0, 0],
-  // ],
-
-  // [
-  //   // DIAGONAL
-  //   [0, 0, 1, 0, 1, 0, 1, 0, 0],
-  //   [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  // ],
-  // [
-  //   // J BEND
-  //   [1, 0, 0, 1, 1, 1, 0, 0, 0],
-  //   [1, 1, 0, 1, 0, 0, 1, 0, 0],
-  //   [1, 1, 1, 0, 0, 1, 0, 0, 0],
-  //   [0, 1, 0, 0, 1, 0, 1, 1, 0],
-  // ],
-  // [
-  //   // L BEND
-  //   [1, 0, 0, 1, 0, 0, 1, 1, 0],
-  //   [1, 1, 1, 1, 0, 0, 0, 0, 0],
-  //   [1, 1, 0, 0, 1, 0, 0, 1, 0],
-  //   [0, 0, 1, 1, 1, 1, 0, 0, 0],
-  // ],
-]
+export const BOARD_SIZE = 5
+export const TILE_SIZE = 1080 / BOARD_SIZE
+export const TILE_SCALE = 16 / BOARD_SIZE
