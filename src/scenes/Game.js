@@ -15,6 +15,8 @@ export default class extends Phaser.Scene {
   }
 
   create() {
+    this.musicObject = this.sound.add('game1Music')
+    this.musicObject.play({ volume: 0.5, loop: true })
     this.width = this.cameras.main.width
     this.height = this.cameras.main.height
     this.board = new Board(this)
@@ -52,6 +54,11 @@ export default class extends Phaser.Scene {
   pointerMove(pointer) {
     if (typeof this.selectedColumn === 'number') {
       const diffY = pointer.y - this.startY
+      // let position = Math.floor(diffY / TILE_SIZE)
+      // if (this.lastPosition !== position) {
+      //   console.log(position, this.lastPosition)
+      // }
+      // this.lastPosition = position
       this.board.sprites
         .filter((s) => s.index % BOARD_SIZE === this.selectedColumn)
         .forEach((s) => {
@@ -71,6 +78,9 @@ export default class extends Phaser.Scene {
       this.selectedColumn < 0
     )
       return
+
+    // this.sound.play('moveSound')
+
     const diffY = pointer.y - this.startY + TILE_SIZE / 2
     const moveAmount = Math.floor(diffY / TILE_SIZE) % BOARD_SIZE
     this.board.columnMove(this.selectedColumn, moveAmount)
@@ -86,13 +96,15 @@ export default class extends Phaser.Scene {
     this.canMove = false
     this.canFill = false
 
-    // this.ui.setScore()
-
     const selected = this.board.sprites.filter((s) =>
       this.board.isPartOfMatch(s.index),
     )
 
     // pop matches
+    if (selected.length > 0) {
+      this.ui.setScore(100 * selected.length)
+      this.sound.play('match1Sound')
+    }
     selected.forEach((s, i) => {
       s.bobTween && s.bobTween.pause()
       if (s.frame.name === 0) return
