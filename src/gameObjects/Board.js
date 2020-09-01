@@ -118,32 +118,6 @@ export default class {
         })
     })
 
-    const types = this.sprites.map((s) => s.frame.name)
-    const leftOvers = [1, 2, 3, 5, 6, 7, 9, 10, 11].map((i) => {
-      const count = types.filter((t) => t === i).length
-      return [i, count]
-    })
-
-    const empty = this.sprites.filter(
-      (s) =>
-        s.frame.name === 0 &&
-        (s.index % this.scene.boardSize === 0 ||
-          s.index % this.scene.boardSize === this.scene.boardSize - 1),
-    )
-    let spawnIndex = 0
-    leftOvers.forEach(([type, n]) => {
-      if (n === 1) {
-        this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
-        spawnIndex++
-        this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
-        spawnIndex++
-      }
-      if (n === 2) {
-        this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
-        spawnIndex++
-      }
-    })
-
     movement.forEach(({ sprite, targetX }, i) => {
       this.tweenFish(sprite, targetX)
     })
@@ -151,6 +125,33 @@ export default class {
     this.scene.time.addEvent({
       delay: MOVE_DURATION,
       callback: () => {
+        const types = this.sprites.map((s) => s.frame.name)
+        const leftOvers = [1, 2, 3, 5, 6, 7, 9, 10, 11].map((i) => {
+          const count = types.filter((t) => t === i).length
+          return [i, count]
+        })
+
+        const empty = Phaser.Math.RND.shuffle(
+          this.sprites.filter(
+            (s) =>
+              s.frame.name === 0 &&
+              (s.index % this.scene.boardSize === 0 ||
+                s.index % this.scene.boardSize === this.scene.boardSize - 1),
+          ),
+        )
+        let spawnIndex = 0
+        leftOvers.forEach(([type, n]) => {
+          if (n === 1) {
+            this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
+            spawnIndex++
+            this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
+            spawnIndex++
+          }
+          if (n === 2) {
+            this.newFish(empty[spawnIndex], type, empty[spawnIndex].x)
+            spawnIndex++
+          }
+        })
         this.scene.canFill = true
         this.scene.submit()
       },

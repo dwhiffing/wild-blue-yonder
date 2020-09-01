@@ -10,7 +10,6 @@ export default class extends Phaser.Scene {
   create() {
     this.score = 0
     this.level = 1
-    this.moves = 10
     this.canFill = true
     this.canMove = true
     this.width = this.cameras.main.width
@@ -21,30 +20,15 @@ export default class extends Phaser.Scene {
     this.tileSize = 1080 / this.boardSize
     this.tileScale = 14 / this.boardSize
     this.fishColors = getFishColors(params.colors, params.types)
+    this.moves = params.moves
 
     this.musicIndex = 0
-    const MUSIC = Phaser.Math.RND.shuffle([
+    this.musicList = Phaser.Math.RND.shuffle([
       'game1Music',
       'game2Music',
       'game3Music',
     ])
-    this.musicObject = this.sound.add(MUSIC[this.musicIndex])
-    this.musicObject.play({ volume: 0 })
-    this.tweens.add({
-      targets: this.musicObject,
-      duration: 1900,
-      volume: { from: 0, to: 0.4 },
-    })
-    this.musicObject.on('complete', () => {
-      this.musicIndex++
-      this.musicObject = this.sound.add(MUSIC[this.musicIndex])
-      this.musicObject.play({ volume: 0 })
-      this.tweens.add({
-        targets: this.musicObject,
-        duration: 1900,
-        volume: { from: 0, to: 0.4 },
-      })
-    })
+    this.nextSong()
 
     this.board = new Board(this)
     this.ui = new ui(this)
@@ -106,7 +90,7 @@ export default class extends Phaser.Scene {
         this.tileScale = 14 / this.boardSize
         this.fishColors = getFishColors(params.colors, params.types)
 
-        this.moves = 10
+        this.moves = params.moves
         this.ui.setMoves(this.moves)
         this.board.generateBoard()
         this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
@@ -116,13 +100,26 @@ export default class extends Phaser.Scene {
     })
   }
 
+  nextSong() {
+    this.musicObject && this.musicObject.destroy()
+    this.musicObject = this.sound.add(this.musicList[this.musicIndex])
+    this.musicObject.on('complete', this.nextSong.bind(this))
+    this.musicIndex++
+    this.musicIndex = this.musicIndex % 3
+    this.musicObject.play({ volume: 0, rate: 1 })
+    this.tweens.add({
+      targets: this.musicObject,
+      duration: 1900,
+      volume: { from: 0, to: 0.4 },
+    })
+  }
+
   pointerUp(pointer) {
     if (
       !this.canMove ||
       typeof this.selectedColumn !== 'number' ||
-      this.selectedColumn < 0 ||
-      (this.selectedSprites &&
-        this.selectedSprites.filter((s) => s.frame.name !== 0).length === 0)
+      this.selectedColumn < 0
+      // || (this.selectedSprites && this.selectedSprites.filter((s) => s.frame.name !== 0).length === 0)
     )
       return
 
@@ -210,36 +207,6 @@ export default class extends Phaser.Scene {
   }
 }
 
-const getLevelParams = (level) => {
-  if (level < 3)
-    return {
-      boardSize: 4,
-      colors: [0, 1],
-      types: [0],
-    }
-
-  if (level < 6)
-    return {
-      boardSize: 6,
-      colors: [0, 1],
-      types: [0],
-    }
-
-  if (level < 10)
-    return {
-      boardSize: 6,
-      colors: [0, 1, 2],
-      types: [0],
-    }
-
-  if (level < 13)
-    return {
-      boardSize: 8,
-      colors: [0, 1, 2],
-      types: [0],
-    }
-}
-
 const getFishColors = (colors, types) => {
   let result = []
   if (types.includes(0)) {
@@ -252,4 +219,70 @@ const getFishColors = (colors, types) => {
     result = result.concat(colors.map((n) => n + 9))
   }
   return result
+}
+
+const getLevelParams = (level) => {
+  if (level === 1)
+    return {
+      boardSize: 4,
+      colors: [0, 1],
+      types: [0],
+      moves: 30,
+    }
+
+  if (level === 2)
+    return {
+      boardSize: 4,
+      colors: [0, 1],
+      types: [0],
+      moves: 30,
+    }
+
+  if (level === 3)
+    return {
+      boardSize: 5,
+      colors: [0, 1],
+      types: [0, 1],
+      moves: 30,
+    }
+
+  if (level <= 5)
+    return {
+      boardSize: 5,
+      colors: [0, 1],
+      types: [0, 1],
+      moves: 30,
+    }
+
+  if (level <= 8)
+    return {
+      boardSize: 6,
+      colors: [0, 1],
+      types: [0, 1],
+      moves: 30,
+    }
+
+  if (level <= 11)
+    return {
+      boardSize: 6,
+      colors: [0, 1, 3],
+      types: [0, 1],
+      moves: 30,
+    }
+
+  if (level <= 15)
+    return {
+      boardSize: 6,
+      colors: [0, 1, 3],
+      types: [0, 1, 3],
+      moves: 30,
+    }
+
+  if (level <= 15)
+    return {
+      boardSize: 8,
+      colors: [0, 1, 3],
+      types: [0, 1, 3],
+      moves: 30,
+    }
 }
