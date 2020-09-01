@@ -32,8 +32,20 @@ export default class extends Phaser.Scene {
       repeat: -1,
       yoyo: true,
     })
+
+    this.helpText = this.add
+      .text(this.width / 2, this.height / 2 - 350, INSTRUCTIONS, {
+        fontFamily: 'RockSalt',
+        fontSize: 50,
+        align: 'center',
+        color: '#ffffff',
+      })
+      .setShadow(2, 2, '#333333', 2, false, true)
+      .setOrigin(0.5)
+      .setAlpha(0)
+
     this.add
-      .image(this.width / 2, this.height / 1.55, 'playButton')
+      .image(this.width / 2, this.height / 1.4, 'playButton')
       .setScale(1.3)
       .setInteractive()
       .on('pointerdown', () => {
@@ -53,11 +65,26 @@ export default class extends Phaser.Scene {
         })
       })
     this.add
-      .image(this.width / 2, this.height / 1.25, 'aboutButton')
+      .image(this.width / 2, this.height / 1.15, 'aboutButton')
       .setScale(1.3)
       .setInteractive()
       .on('pointerdown', () => {
         logo.setAlpha(logo.alpha ? 0 : 1)
+        this.helpText.setAlpha(this.helpText.alpha ? 0 : 1)
       })
   }
 }
+
+const INSTRUCTIONS = `
+Drag the fish columns to make
+lines of 3 or more.
+        
+Fish will swim left or right
+after you move them, depending
+on the direction they face.
+
+Clear all fish to complete a level. 
+
+Created By: Daniel Whiffing
+Music: Purple Planet
+`

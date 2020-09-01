@@ -34,6 +34,8 @@ export default class extends Phaser.Scene {
     this.load.audio('swimSound', 'assets/wave.mp3', { instances: 4 })
     this.load.audio('moveSound', 'assets/move2.wav', { instances: 4 })
     this.load.audio('game1Music', 'assets/game-1.mp3')
+    this.load.audio('game2Music', 'assets/game-2.mp3')
+    this.load.audio('game3Music', 'assets/game-3.mp3')
     this.load.image('menu', 'assets/images/wildblueyonder.png')
     this.load.image('bubble', 'assets/images/bubble2.png')
     this.load.spritesheet('icon', 'assets/images/icons.png', {
@@ -52,7 +54,7 @@ export default class extends Phaser.Scene {
         },
         active: () => {
           progress.destroy()
-          this.scene.start('Game')
+          this.scene.start('Menu')
         },
       })
     })

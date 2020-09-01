@@ -49,6 +49,6 @@ export default class {
     this.scoreText.setText(score)
   }
   setMoves(amount) {
-    this.movesText.setText(`Moves ${amount}`)
+    if (amount >= 0) this.movesText.setText(`Moves ${amount}`)
   }
 }

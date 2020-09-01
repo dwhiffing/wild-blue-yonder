@@ -1,13 +1,6 @@
 import Board from '../gameObjects/Board'
 import ui from '../gameObjects/ui'
-import {
-  TILE_SIZE,
-  BOARD_SIZE,
-  Y_BUFFER,
-  X_BUFFER,
-  TILE_SCALE,
-  EXPLOSION_DURATION,
-} from '../constants'
+import { Y_BUFFER, X_BUFFER, EXPLOSION_DURATION } from '../constants'
 
 export default class extends Phaser.Scene {
   constructor() {
@@ -15,22 +8,47 @@ export default class extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
-    this.musicObject = this.sound.add('game1Music')
-    this.musicObject.play({ volume: 0, loop: true })
+    this.score = 0
+    this.level = 1
+    this.moves = 10
+    this.canFill = true
+    this.canMove = true
+    this.width = this.cameras.main.width
+    this.height = this.cameras.main.height
+
+    const params = getLevelParams(this.level)
+    this.boardSize = params.boardSize
+    this.tileSize = 1080 / this.boardSize
+    this.tileScale = 14 / this.boardSize
+    this.fishColors = getFishColors(params.colors, params.types)
+
+    this.musicIndex = 0
+    const MUSIC = Phaser.Math.RND.shuffle([
+      'game1Music',
+      'game2Music',
+      'game3Music',
+    ])
+    this.musicObject = this.sound.add(MUSIC[this.musicIndex])
+    this.musicObject.play({ volume: 0 })
     this.tweens.add({
       targets: this.musicObject,
       duration: 1900,
       volume: { from: 0, to: 0.4 },
     })
-    this.score = 0
-    this.level = 1
-    this.moves = 10
-    this.width = this.cameras.main.width
-    this.height = this.cameras.main.height
+    this.musicObject.on('complete', () => {
+      this.musicIndex++
+      this.musicObject = this.sound.add(MUSIC[this.musicIndex])
+      this.musicObject.play({ volume: 0 })
+      this.tweens.add({
+        targets: this.musicObject,
+        duration: 1900,
+        volume: { from: 0, to: 0.4 },
+      })
+    })
+
     this.board = new Board(this)
     this.ui = new ui(this)
-    this.canFill = true
+
     this.particles = this.add.particles('bubble')
     this.emitter = this.particles
       .createEmitter({
@@ -48,14 +66,13 @@ export default class extends Phaser.Scene {
     this.input.on('pointerdown', this.pointerDown, this)
     this.input.on('pointermove', this.pointerMove, this)
     this.input.on('pointerup', this.pointerUp, this)
-    this.canMove = true
-    this.submit()
+    this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
   }
 
   pointerDown(pointer) {
     if (!this.canMove) return
     this.startY = pointer.y
-    this.selectedColumn = Math.floor((pointer.x - X_BUFFER) / TILE_SIZE)
+    this.selectedColumn = Math.floor((pointer.x - X_BUFFER) / this.tileSize)
     this.board.sprites.forEach((s) => s.bobTween && s.bobTween.pause())
   }
 
@@ -63,26 +80,38 @@ export default class extends Phaser.Scene {
     if (typeof this.selectedColumn === 'number') {
       const diffY = pointer.y - this.startY
       this.selectedSprites = this.board.sprites.filter(
-        (s) => s.index % BOARD_SIZE === this.selectedColumn,
+        (s) => s.index % this.boardSize === this.selectedColumn,
       )
 
       this.selectedSprites.forEach((s) => {
         let newY =
-          diffY + Math.floor(s.index / BOARD_SIZE) * TILE_SIZE + TILE_SIZE / 2
-        if (newY < 0) newY += BOARD_SIZE * TILE_SIZE
+          diffY +
+          Math.floor(s.index / this.boardSize) * this.tileSize +
+          this.tileSize / 2
+        if (newY < 0) newY += this.boardSize * this.tileSize
 
-        s.y = Y_BUFFER + (newY % (BOARD_SIZE * TILE_SIZE))
+        s.y = Y_BUFFER + (newY % (this.boardSize * this.tileSize))
       })
     }
   }
 
   newLevel() {
+    this.canMove = false
+    this.canFill = false
+    const params = getLevelParams(this.level)
     this.cameras.main.fade(1000, 20, 57, 162, true, (c, p) => {
       if (p === 1) {
+        this.boardSize = params.boardSize
+        this.tileSize = 1080 / this.boardSize
+        this.tileScale = 14 / this.boardSize
+        this.fishColors = getFishColors(params.colors, params.types)
+
         this.moves = 10
         this.ui.setMoves(this.moves)
         this.board.generateBoard()
         this.cameras.main.fadeFrom(1000, 20, 57, 162, true)
+        this.canMove = true
+        this.canFill = true
       }
     })
   }
@@ -92,27 +121,23 @@ export default class extends Phaser.Scene {
       !this.canMove ||
       typeof this.selectedColumn !== 'number' ||
       this.selectedColumn < 0 ||
-      this.selectedSprites.filter((s) => s.frame.name !== 0).length === 0
+      (this.selectedSprites &&
+        this.selectedSprites.filter((s) => s.frame.name !== 0).length === 0)
     )
       return
 
-    if (this.moves <= 0) {
-      this.sound.play('loseSound')
-
-      this.newLevel()
-      return
-    }
-
-    const diffY = pointer.y - this.startY + TILE_SIZE / 2
-    const moveAmount = Math.floor(diffY / TILE_SIZE) % BOARD_SIZE
+    const diffY = pointer.y - this.startY + this.tileSize / 2
+    const moveAmount = Math.floor(diffY / this.tileSize) % this.boardSize
     this.board.columnMove(this.selectedColumn, moveAmount)
     this.selectedColumn = false
     this.board.sprites.forEach((s) => s.bobTween && s.bobTween.resume())
     if (moveAmount !== 0) {
       this.moves -= 1
-      this.ui.setMoves(this.moves)
       this.sound.play('moveSound')
     }
+
+    this.ui.setMoves(this.moves)
+
     this.time.addEvent({
       delay: 50,
       callback: () => this.submit(moveAmount !== 0),
@@ -129,7 +154,7 @@ export default class extends Phaser.Scene {
 
     // pop matches
     if (selected.length > 0) {
-      this.score += 100 * selected.length
+      this.score += 100 * (selected.length === 3 ? 1 : selected.length * 2)
       this.ui.setScore(this.score)
       this.sound.play('match1Sound')
     }
@@ -138,7 +163,7 @@ export default class extends Phaser.Scene {
       if (s.frame.name === 0) return
       this.tweens.add({
         targets: s,
-        scale: { from: TILE_SCALE * s.direction, to: TILE_SCALE * 0.5 },
+        scale: { from: this.tileScale * s.direction, to: this.tileScale * 0.5 },
         alpha: 0,
         angle: 90,
         duration: EXPLOSION_DURATION,
@@ -147,7 +172,7 @@ export default class extends Phaser.Scene {
           s.setFrame(0)
             .setAngle(0)
             .setAlpha(1)
-            .setScale(TILE_SCALE * s.direction, TILE_SCALE)
+            .setScale(this.tileScale * s.direction, this.tileScale)
           this.emitter.setPosition(s.x, s.y)
           this.emitter.setScale({ start: 0.1, end: 0.5 })
           this.emitter.setLifespan({ min: 500, max: 2000 })
@@ -165,15 +190,16 @@ export default class extends Phaser.Scene {
     } else {
       this.canFill = true
       this.canMove = true
-      const types = this.board.sprites.map((s) => s.frame.name)
-      if (
-        [1, 2, 3, 5, 6, 7, 9, 10, 11].every(
-          (i) => types.filter((t) => t === i).length < 3,
-        )
-      ) {
-        this.sound.play('winSound')
-        this.level++
-        this.ui.setLevel(this.level)
+    }
+
+    if (this.board.sprites.filter((s) => s.frame.name > 0).length === 0) {
+      this.sound.play('winSound')
+      this.level++
+      this.ui.setLevel(this.level)
+      this.newLevel()
+    } else {
+      if (this.moves < 0) {
+        this.sound.play('loseSound')
         this.newLevel()
       }
     }
@@ -182,4 +208,48 @@ export default class extends Phaser.Scene {
   newPattern() {
     this.hook.newPattern()
   }
+}
+
+const getLevelParams = (level) => {
+  if (level < 3)
+    return {
+      boardSize: 4,
+      colors: [0, 1],
+      types: [0],
+    }
+
+  if (level < 6)
+    return {
+      boardSize: 6,
+      colors: [0, 1],
+      types: [0],
+    }
+
+  if (level < 10)
+    return {
+      boardSize: 6,
+      colors: [0, 1, 2],
+      types: [0],
+    }
+
+  if (level < 13)
+    return {
+      boardSize: 8,
+      colors: [0, 1, 2],
+      types: [0],
+    }
+}
+
+const getFishColors = (colors, types) => {
+  let result = []
+  if (types.includes(0)) {
+    result = result.concat(colors.map((n) => n + 1))
+  }
+  if (types.includes(1)) {
+    result = result.concat(colors.map((n) => n + 5))
+  }
+  if (types.includes(2)) {
+    result = result.concat(colors.map((n) => n + 9))
+  }
+  return result
 }
