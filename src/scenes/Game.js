@@ -30,6 +30,11 @@ export default class extends Phaser.Scene {
     ])
     this.nextSong()
 
+    for (let i = 0; i < 10; i++) {
+      const bubble = this.add.sprite(-200, this.height + 200, 'bubble')
+      this.tweenBubble(bubble, i)
+    }
+
     this.board = new Board(this)
     this.ui = new ui(this)
 
@@ -204,6 +209,22 @@ export default class extends Phaser.Scene {
 
   newPattern() {
     this.hook.newPattern()
+  }
+
+  tweenBubble(sprite, i) {
+    sprite.x = Phaser.Math.RND.between(0, this.width)
+    sprite.setScale(Phaser.Math.RND.between(5, 20) / 10)
+    this.tweens
+      .add({
+        targets: sprite,
+        delay: i * 1000 + Phaser.Math.RND.between(0, 2000),
+        y: { from: this.height + 200, to: -500 },
+        duration: Phaser.Math.RND.between(6000, 10000),
+        ease: 'Quad.easeOut',
+      })
+      .on('complete', () => {
+        this.tweenBubble(sprite, i)
+      })
   }
 }
 
